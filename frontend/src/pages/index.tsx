@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 import AIAssistant from '@/components/AIAssistant'
 import ModelBuilder from '@/components/ModelBuilder'
 import LoadsPanel from '@/components/LoadsPanel'
+import SeismicAnalysis from '@/components/SeismicAnalysis'
 
 const ModelViewer = dynamic(() => import('@/components/ModelViewer'), { ssr: false })
 
@@ -60,6 +61,12 @@ export default function Home() {
             Loads
           </button>
           <button
+            onClick={() => setActiveTab('seismic')}
+            className={`px-4 py-2 rounded ${activeTab === 'seismic' ? 'bg-blue-600 text-white' : 'bg-white'}`}
+          >
+            Seismic
+          </button>
+          <button
             onClick={() => setActiveTab('bim')}
             className={`px-4 py-2 rounded ${activeTab === 'bim' ? 'bg-blue-600 text-white' : 'bg-white'}`}
           >
@@ -73,6 +80,7 @@ export default function Home() {
               {activeTab === 'model' && <ModelTab />}
               {activeTab === 'loads' && <LoadsPanel />}
               {activeTab === 'analysis' && <AnalysisTab />}
+              {activeTab === 'seismic' && <SeismicAnalysis />}
               {activeTab === 'design' && <DesignTab />}
               {activeTab === 'detailing' && <DetailingTab />}
               {activeTab === 'bim' && <BIMTab />}
