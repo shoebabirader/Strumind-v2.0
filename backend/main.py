@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api import models, analysis, design, detailing, ml, bim, projects, collaboration, learning, seismic, wind, pdelta, connections, reporting, templates
+from app.api import models, analysis, design, detailing, ml, bim, projects, collaboration, learning, seismic, wind, pdelta, connections, reporting, design_extended, templates
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -37,6 +37,7 @@ app.include_router(wind.router, prefix="/api/wind", tags=["wind"])
 app.include_router(pdelta.router, prefix="/api/pdelta", tags=["pdelta"])
 app.include_router(connections.router, prefix="/api/connections", tags=["connections"])
 app.include_router(reporting.router, prefix="/api/reporting", tags=["reporting"])
+app.include_router(design_extended.router, prefix="/api/design-extended", tags=["design-extended"])
 app.include_router(templates.router, prefix="/api/templates", tags=["templates"])
 
 @app.get("/")
