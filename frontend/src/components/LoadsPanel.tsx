@@ -32,7 +32,7 @@ export default function LoadsPanel() {
   const [loads, setLoads] = useState<Load[]>([])
   const [loadCases, setLoadCases] = useState<string[]>(['Dead Load', 'Live Load'])
   const [activeTab, setActiveTab] = useState<'manual' | 'seismic' | 'wind'>('manual')
-  
+
   // Seismic parameters
   const [seismicParams, setSeismicParams] = useState<SeismicParams>({
     code: 'IS1893',
@@ -41,7 +41,7 @@ export default function LoadsPanel() {
     response_reduction_factor: 5.0,
     soil_type: 'MEDIUM'
   })
-  
+
   // Wind parameters
   const [windParams, setWindParams] = useState<WindParams>({
     code: 'IS875',
@@ -49,7 +49,7 @@ export default function LoadsPanel() {
     terrain_category: 2,
     building_class: 'B'
   })
-  
+
   const [buildingData, setBuildingData] = useState({
     height: 30,
     width: 20,
@@ -79,7 +79,7 @@ export default function LoadsPanel() {
     const name = prompt('Enter load case name:')
     if (name) setLoadCases([...loadCases, name])
   }
-  
+
   const generateSeismicLoads = async () => {
     try {
       const response = await axios.post(`${API_URL}/api/seismic/base-shear`, {
@@ -88,14 +88,14 @@ export default function LoadsPanel() {
         building_height: buildingData.height,
         building_type: 'RC_MRF'
       })
-      
+
       const baseShear = response.data.results.base_shear
-      
+
       // Add seismic load cases
       if (!loadCases.includes('Seismic X')) {
         setLoadCases([...loadCases, 'Seismic X', 'Seismic Y'])
       }
-      
+
       // Add seismic loads
       const seismicLoadX: Load = {
         id: loads.length + 1,
@@ -104,7 +104,7 @@ export default function LoadsPanel() {
         magnitude: baseShear,
         loadCase: 'Seismic X'
       }
-      
+
       const seismicLoadY: Load = {
         id: loads.length + 2,
         type: 'seismic',
@@ -112,7 +112,7 @@ export default function LoadsPanel() {
         magnitude: baseShear,
         loadCase: 'Seismic Y'
       }
-      
+
       setLoads([...loads, seismicLoadX, seismicLoadY])
       alert(`Seismic loads generated! Base Shear: ${baseShear.toFixed(2)} kN`)
     } catch (error) {
@@ -120,7 +120,7 @@ export default function LoadsPanel() {
       alert('Error generating seismic loads')
     }
   }
-  
+
   const generateWindLoads = async () => {
     try {
       const response = await axios.post(`${API_URL}/api/wind/design-pressure`, {
@@ -132,15 +132,15 @@ export default function LoadsPanel() {
           height: buildingData.height
         }
       })
-      
+
       const pressure = response.data.results.design_pressure
       const windForce = (pressure * buildingData.height * buildingData.width) / 1000 // kN
-      
+
       // Add wind load cases
       if (!loadCases.includes('Wind X')) {
         setLoadCases([...loadCases, 'Wind X', 'Wind Y'])
       }
-      
+
       // Add wind loads
       const windLoadX: Load = {
         id: loads.length + 1,
@@ -149,7 +149,7 @@ export default function LoadsPanel() {
         magnitude: windForce,
         loadCase: 'Wind X'
       }
-      
+
       const windLoadY: Load = {
         id: loads.length + 2,
         type: 'wind',
@@ -157,7 +157,7 @@ export default function LoadsPanel() {
         magnitude: windForce,
         loadCase: 'Wind Y'
       }
-      
+
       setLoads([...loads, windLoadX, windLoadY])
       alert(`Wind loads generated! Wind Force: ${windForce.toFixed(2)} kN`)
     } catch (error) {
@@ -212,18 +212,18 @@ export default function LoadsPanel() {
           </div>
         </>
       )}
-      
+
       {/* Seismic Loads Tab */}
       {activeTab === 'seismic' && (
         <div className="space-y-4 mb-4">
           <h3 className="font-bold text-lg">Generate Seismic Loads</h3>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Seismic Code</label>
               <select
                 value={seismicParams.code}
-                onChange={(e) => setSeismicParams({...seismicParams, code: e.target.value})}
+                onChange={(e) => setSeismicParams({ ...seismicParams, code: e.target.value })}
                 className="w-full p-2 border rounded"
               >
                 <option value="IS1893">IS 1893:2016 (India)</option>
@@ -231,12 +231,12 @@ export default function LoadsPanel() {
                 <option value="EC8">Eurocode 8 (Europe)</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Seismic Zone</label>
               <select
                 value={seismicParams.zone}
-                onChange={(e) => setSeismicParams({...seismicParams, zone: e.target.value})}
+                onChange={(e) => setSeismicParams({ ...seismicParams, zone: e.target.value })}
                 className="w-full p-2 border rounded"
               >
                 <option value="ZONE_II">Zone II (Z=0.10)</option>
@@ -245,50 +245,50 @@ export default function LoadsPanel() {
                 <option value="ZONE_V">Zone V (Z=0.36)</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Importance Factor (I)</label>
               <input
                 type="number"
                 step="0.1"
                 value={seismicParams.importance_factor}
-                onChange={(e) => setSeismicParams({...seismicParams, importance_factor: parseFloat(e.target.value)})}
+                onChange={(e) => setSeismicParams({ ...seismicParams, importance_factor: parseFloat(e.target.value) })}
                 className="w-full p-2 border rounded"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Response Reduction (R)</label>
               <input
                 type="number"
                 step="0.5"
                 value={seismicParams.response_reduction_factor}
-                onChange={(e) => setSeismicParams({...seismicParams, response_reduction_factor: parseFloat(e.target.value)})}
+                onChange={(e) => setSeismicParams({ ...seismicParams, response_reduction_factor: parseFloat(e.target.value) })}
                 className="w-full p-2 border rounded"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Building Height (m)</label>
               <input
                 type="number"
                 value={buildingData.height}
-                onChange={(e) => setBuildingData({...buildingData, height: parseFloat(e.target.value)})}
+                onChange={(e) => setBuildingData({ ...buildingData, height: parseFloat(e.target.value) })}
                 className="w-full p-2 border rounded"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Total Weight (kN)</label>
               <input
                 type="number"
                 value={buildingData.total_weight}
-                onChange={(e) => setBuildingData({...buildingData, total_weight: parseFloat(e.target.value)})}
+                onChange={(e) => setBuildingData({ ...buildingData, total_weight: parseFloat(e.target.value) })}
                 className="w-full p-2 border rounded"
               />
             </div>
           </div>
-          
+
           <button
             onClick={generateSeismicLoads}
             className="w-full bg-blue-600 text-white px-6 py-3 rounded font-semibold hover:bg-blue-700"
@@ -297,18 +297,18 @@ export default function LoadsPanel() {
           </button>
         </div>
       )}
-      
+
       {/* Wind Loads Tab */}
       {activeTab === 'wind' && (
         <div className="space-y-4 mb-4">
           <h3 className="font-bold text-lg">Generate Wind Loads</h3>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Wind Code</label>
               <select
                 value={windParams.code}
-                onChange={(e) => setWindParams({...windParams, code: e.target.value})}
+                onChange={(e) => setWindParams({ ...windParams, code: e.target.value })}
                 className="w-full p-2 border rounded"
               >
                 <option value="IS875">IS 875 Part 3:2015 (India)</option>
@@ -317,22 +317,22 @@ export default function LoadsPanel() {
                 <option value="EC1">Eurocode 1 (Europe)</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Basic Wind Speed (m/s)</label>
               <input
                 type="number"
                 value={windParams.basic_wind_speed}
-                onChange={(e) => setWindParams({...windParams, basic_wind_speed: parseFloat(e.target.value)})}
+                onChange={(e) => setWindParams({ ...windParams, basic_wind_speed: parseFloat(e.target.value) })}
                 className="w-full p-2 border rounded"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Terrain Category</label>
               <select
                 value={windParams.terrain_category}
-                onChange={(e) => setWindParams({...windParams, terrain_category: parseInt(e.target.value)})}
+                onChange={(e) => setWindParams({ ...windParams, terrain_category: parseInt(e.target.value) })}
                 className="w-full p-2 border rounded"
               >
                 <option value="1">Category 1 - Exposed</option>
@@ -341,12 +341,12 @@ export default function LoadsPanel() {
                 <option value="4">Category 4 - Urban</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Building Class</label>
               <select
                 value={windParams.building_class}
-                onChange={(e) => setWindParams({...windParams, building_class: e.target.value})}
+                onChange={(e) => setWindParams({ ...windParams, building_class: e.target.value })}
                 className="w-full p-2 border rounded"
               >
                 <option value="A">Class A - Temporary</option>
@@ -354,28 +354,28 @@ export default function LoadsPanel() {
                 <option value="C">Class C - Important</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Building Height (m)</label>
               <input
                 type="number"
                 value={buildingData.height}
-                onChange={(e) => setBuildingData({...buildingData, height: parseFloat(e.target.value)})}
+                onChange={(e) => setBuildingData({ ...buildingData, height: parseFloat(e.target.value) })}
                 className="w-full p-2 border rounded"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-1">Building Width (m)</label>
               <input
                 type="number"
                 value={buildingData.width}
-                onChange={(e) => setBuildingData({...buildingData, width: parseFloat(e.target.value)})}
+                onChange={(e) => setBuildingData({ ...buildingData, width: parseFloat(e.target.value) })}
                 className="w-full p-2 border rounded"
               />
             </div>
           </div>
-          
+
           <button
             onClick={generateWindLoads}
             className="w-full bg-blue-600 text-white px-6 py-3 rounded font-semibold hover:bg-blue-700"
@@ -491,7 +491,7 @@ export default function LoadsPanel() {
           </table>
         </div>
       </div>
-      
+
       {/* Summary */}
       {loads.length > 0 && (
         <div className="mt-4 p-4 bg-blue-50 rounded">

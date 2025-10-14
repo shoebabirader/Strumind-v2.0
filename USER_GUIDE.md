@@ -1,353 +1,466 @@
-# StruMind User Guide
+# 📘 StruMind User Guide
 
-## Getting Started
+## Welcome to StruMind - AI-Powered Structural Analysis Platform
 
-### Creating Your First Model
+---
 
-#### Step 1: Start a New Project
-1. Open StruMind at `http://localhost:3000`
-2. Click "New Project" or select from existing projects
-3. Choose a quick start template or start blank
+## 🚀 Getting Started
 
-#### Step 2: Model Builder - Nodes Tab
+### System Requirements
+- **Browser**: Chrome, Firefox, Safari, or Edge (latest version)
+- **Internet**: Stable connection required
+- **Screen**: Minimum 1366x768 resolution recommended
 
-**Adding Nodes:**
-```
-Click "+ Add Node" button
-Enter coordinates:
-- X: 0 mm (horizontal)
-- Y: 0 mm (vertical)
-- Z: 0 mm (depth)
+### First Time Setup
+1. Open your browser and navigate to StruMind
+2. Create an account or sign in
+3. You'll land on the professional dashboard
 
-Define Restraints:
-☑ Ux - Restrain X translation
-☑ Uy - Restrain Y translation
-☑ Uz - Restrain Z translation
-☑ Rx - Restrain X rotation
-☑ Ry - Restrain Y rotation
-☑ Rz - Restrain Z rotation
-```
+---
 
-**Example: Simple Portal Frame**
-```
-Node 1: (0, 0, 0) - Fixed support [All restraints checked]
-Node 2: (0, 3000, 0) - Free [No restraints]
-Node 3: (5000, 3000, 0) - Free [No restraints]
-Node 4: (5000, 0, 0) - Fixed support [All restraints checked]
-```
+## 📊 Dashboard Overview
 
-#### Step 3: Model Builder - Elements Tab
+The dashboard is your command center with:
 
-**Creating Elements:**
-1. Go to Nodes tab and select nodes by checking boxes
-2. Switch to Elements tab
-3. Click "+ Add Element"
-4. Select element type: Beam, Column, Truss, Slab, or Shell
-5. Assign material from dropdown
-6. Assign section from dropdown
+### Quick Stats
+- **Total Nodes**: Number of nodes in your model
+- **Elements**: Total structural elements
+- **Load Cases**: Defined load combinations
+- **Analyses Run**: Completed analysis count
 
-**Example: Portal Frame Elements**
-```
-Element 1: Column
-- Nodes: 1, 2
-- Material: Concrete M25
-- Section: 300x300
+### Recent Analyses
+Track your analysis history with status indicators:
+- ✅ **Completed** - Analysis finished successfully
+- ⏳ **Running** - Analysis in progress
+- ⏸️ **Pending** - Queued for execution
 
-Element 2: Beam
-- Nodes: 2, 3
-- Material: Concrete M25
-- Section: 300x450
+### Design Modules
+Monitor design status for:
+- RC Beam Design
+- RC Column Design
+- Slab Design
+- Foundation Design
 
-Element 3: Column
-- Nodes: 3, 4
-- Material: Concrete M25
-- Section: 300x300
-```
+---
 
-#### Step 4: Model Builder - Materials Tab
+## 🏗️ Model Builder
 
-**Pre-defined Materials:**
-- Concrete M25 (E = 25 GPa, ν = 0.2, ρ = 2500 kg/m³)
-- Steel Fe415 (E = 200 GPa, ν = 0.3, ρ = 7850 kg/m³)
+### Creating a New Model
 
-**Adding Custom Material:**
-1. Click "+ Add Material"
-2. Enter properties:
-   - Name: "Concrete M30"
-   - Young's Modulus: 27e9 Pa
-   - Poisson's Ratio: 0.2
-   - Density: 2500 kg/m³
-   - Grade: M30
+1. **Click "Model Builder"** from the sidebar
+2. **Add Nodes**:
+   - Click on the 3D canvas to place nodes
+   - Or use coordinates: X, Y, Z values
+   - Snap to grid for precision
 
-#### Step 5: Model Builder - Sections Tab
+3. **Add Elements**:
+   - Select two nodes to create a beam/column
+   - Choose element type (beam, column, brace)
+   - Assign section properties
 
-**Pre-defined Sections:**
-- 300x450 (Rectangular beam)
-- 300x300 (Square column)
+4. **Define Supports**:
+   - Click on nodes to add supports
+   - Choose support type:
+     - Fixed (all DOF restrained)
+     - Pinned (translations restrained)
+     - Roller (vertical translation restrained)
 
-**Adding Custom Section:**
-1. Click "+ Add Section"
-2. Select type: Rectangular, Circular, I-section, Custom
-3. Enter dimensions:
-   - Width: 400 mm
-   - Depth: 600 mm
+5. **Apply Loads**:
+   - Point loads on nodes
+   - Distributed loads on elements
+   - Moments and forces
 
-#### Step 6: Loads Tab
+### 3D Viewer Controls
+- **Rotate**: Left-click + drag
+- **Pan**: Right-click + drag
+- **Zoom**: Mouse wheel
+- **Reset View**: Double-click
 
-**Adding Loads:**
-1. Click "+ Add Load"
-2. Select load type:
-   - Point Load (applied at nodes)
-   - Distributed Load (applied on elements)
-   - Moment (applied at nodes)
-3. Enter node/element number
-4. Select direction: X, Y, Z, MX, MY, MZ
-5. Enter magnitude in kN or kNm
-6. Select load case
+---
 
-**Example: Dead Load on Beam**
-```
-Type: Distributed Load
-Element: 2
-Direction: Y (downward)
-Magnitude: -10 kN/m
-Load Case: Dead Load
-```
+## 🔬 Analysis Module
 
-**Creating Load Cases:**
-1. Click "+ Add Load Case"
-2. Enter name: "Wind Load X"
-3. Add loads for this case
+### Available Analysis Types
 
-#### Step 7: Analysis Tab
+#### 1. Static Analysis
+- **Purpose**: Calculate displacements and forces under static loads
+- **When to Use**: Dead load, live load, static wind/seismic
+- **Steps**:
+  1. Go to Analysis → Static
+  2. Select load cases
+  3. Click "Run Analysis"
+  4. View results in Results tab
 
-**Running Analysis:**
-1. Switch to Analysis tab
-2. Select analysis type:
-   - Static Analysis (forces and displacements)
-   - Modal Analysis (natural frequencies)
-   - Pushover Analysis (capacity curve)
-   - Time-History Analysis (seismic response)
-3. Click "Run Analysis"
-4. View results in 3D viewer or tables
+#### 2. Modal Analysis
+- **Purpose**: Find natural frequencies and mode shapes
+- **When to Use**: Dynamic behavior, vibration studies
+- **Parameters**:
+  - Number of modes (default: 10)
+  - Mass source (dead load factor)
 
-**Analysis Results Include:**
-- Node displacements (Ux, Uy, Uz, Rx, Ry, Rz)
-- Element forces (Axial, Shear, Moment)
-- Support reactions
-- Natural frequencies (modal analysis)
+#### 3. Response Spectrum
+- **Purpose**: Seismic analysis using response spectrum
+- **When to Use**: Earthquake-resistant design
+- **Steps**:
+  1. Select seismic code (IS 1893, ASCE 7, EC8)
+  2. Define spectrum parameters
+  3. Choose direction (X, Y, Z)
+  4. Run analysis
 
-#### Step 8: Design Tab
+#### 4. Time-History Analysis
+- **Purpose**: Dynamic analysis with time-varying loads
+- **When to Use**: Earthquake records, blast loads
+- **Parameters**:
+  - Time step (0.01s recommended)
+  - Damping ratio (5% typical)
+  - Load history data
 
-**Generating Design:**
-1. Switch to Design tab
-2. Select design code:
-   - IS 456 (Indian RC)
-   - ACI 318 (American RC)
-   - IS 800 (Indian Steel)
-   - AISC (American Steel)
-3. Click "Generate Design"
-4. Review design output:
+#### 5. Buckling Analysis
+- **Purpose**: Find critical buckling loads
+- **When to Use**: Slender columns, compression members
+- **Output**: Load factors and buckling modes
+
+#### 6. P-Delta Analysis
+- **Purpose**: Include geometric nonlinearity
+- **When to Use**: Tall buildings, large deformations
+- **Note**: Iterative analysis, may take longer
+
+---
+
+## 🎨 Design Module
+
+### RC Design
+
+#### Beam Design
+1. Navigate to Design → RC Beam
+2. Input parameters:
+   - Span length
+   - Cross-section (width × depth)
+   - Concrete grade (M20, M25, M30, etc.)
+   - Steel grade (Fe415, Fe500)
+3. Select design code (IS 456, ACI 318, EC2, etc.)
+4. Click "Design"
+5. Review:
    - Required reinforcement
-   - Section adequacy checks
-   - Code compliance status
+   - Bar arrangement
+   - Shear reinforcement
+   - Deflection check
 
-**AI Optimization:**
-1. Click "AI Optimize"
-2. AI suggests optimal sections and reinforcement
-3. Review suggestions with confidence scores
-4. Accept or modify recommendations
+#### Column Design
+1. Navigate to Design → RC Column
+2. Input:
+   - Height
+   - Cross-section
+   - Axial load
+   - Moments (Mx, My)
+3. Design outputs:
+   - Longitudinal steel
+   - Ties/stirrups
+   - Interaction diagram
+   - Slenderness check
 
-#### Step 9: Detailing Tab
+#### Slab Design
+1. Navigate to Design → Slab Design
+2. Choose slab type:
+   - **One-Way Slab**: Ly/Lx > 2
+   - **Two-Way Slab**: Ly/Lx ≤ 2
+   - **Flat Slab**: No beams
+3. Input:
+   - Span dimensions
+   - Thickness
+   - Loads (dead, live)
+   - Support conditions
+4. Results:
+   - Main reinforcement
+   - Distribution steel
+   - Punching shear check (flat slabs)
 
-**Generating Drawings:**
-1. Switch to Detailing tab
-2. Click "Generate Drawings"
-3. Select output format: DXF, PDF, or IFC
+#### Shear Wall Design
+1. Navigate to Design → Shear Wall
+2. Input:
+   - Height and length
+   - Thickness
+   - Axial load, shear, moment
+3. Options:
+   - Include boundary elements
+   - Coupling beams
+4. Outputs:
+   - Boundary element reinforcement
+   - Web reinforcement
+   - Shear capacity
 
-**Bar Bending Schedule (BBS):**
-1. Click "Export BBS"
-2. View table with:
-   - Bar mark
-   - Diameter
-   - Length
-   - Quantity
-   - Shape code
+### Steel Design
 
-**Bill of Quantities (BOQ):**
-1. Click "Generate BOQ"
-2. View quantities:
-   - Concrete volume (m³)
-   - Steel weight (kg)
-   - Formwork area (m²)
-   - Estimated cost
+#### Steel Member Design
+1. Navigate to Design → Steel Member
+2. Select section from database:
+   - AISC (W, S, C, L, HSS)
+   - Indian (ISMB, ISMC, ISJB)
+   - European (IPE, HE, UB, UC)
+3. Input loads
+4. Design checks:
+   - Flexure
+   - Shear
+   - Deflection
+   - Local buckling
 
-#### Step 10: BIM Integration
+#### Steel Connections
+1. Navigate to Design → Connections
+2. Choose connection type:
+   - Bolted
+   - Welded
+   - Moment connection
+   - Shear connection
+3. Design outputs:
+   - Bolt size and spacing
+   - Weld size
+   - Plate thickness
 
-**Exporting to IFC:**
-1. Switch to BIM tab
-2. Click "Export to IFC"
-3. Download IFC file
-4. Import into Revit/Tekla/ArchiCAD
+### Foundation Design
 
-**Importing from IFC:**
-1. Click "Import IFC"
-2. Select IFC file from BIM software
-3. Model automatically created with all properties
+#### Isolated Footing
+1. Navigate to Design → Foundation → Isolated
+2. Input:
+   - Column loads
+   - Soil bearing capacity
+   - Footing dimensions
+3. Design:
+   - Flexural reinforcement
+   - Shear check
+   - Bearing pressure
 
-**3D Visualization:**
-1. Switch to Model tab
-2. Click "3D Viewer" button
-3. Use mouse to:
-   - Left click + drag: Rotate
-   - Right click + drag: Pan
-   - Scroll: Zoom
-4. View stress contours and deformations
+#### Combined Footing
+- For two or more columns
+- Rectangular or trapezoidal shape
 
-## Using Quick Templates
+#### Mat Foundation
+- For entire building
+- Includes punching shear checks
 
-### Simple Frame Template
-- 2D portal frame
-- 2 columns (3m height)
-- 1 beam (5m span)
-- Fixed supports at base
-- Ready for load application
+---
 
-### Building Frame Template
-- 3D multi-story building
-- 3 stories (3m each)
-- 2x2 bays (5m x 5m)
-- 36 nodes, 27 columns
-- Ready for analysis
+## 📈 Results Visualization
 
-### Truss Template
-- 2D truss structure
-- 3 nodes forming triangle
-- Steel members
-- Suitable for roof trusses
+### Force Diagrams
+- **Moment Diagram**: Bending moment along member
+- **Shear Diagram**: Shear force distribution
+- **Axial Diagram**: Axial force variation
 
-### Grid Floor Template
-- 4x4 grid of beams
-- 16 nodes
-- Orthogonal beam layout
-- Typical floor system
+### Deflection
+- **Deflection Curve**: Displacement along span
+- **Limit Checks**: L/180, L/250, L/360, L/500
+- **Status**: Pass/Fail indication
 
-### Bridge Template
-- Simple bridge span
-- 3 nodes (20m total span)
-- Large beam sections
-- Fixed supports at ends
+### Stress Analysis
+- **Stress Contours**: Color-coded stress distribution
+- **Maximum Values**: Peak tensile/compressive stress
+- **Utilization Ratio**: Stress/Allowable stress
 
-## AI Assistant Usage
+### Mode Shapes
+- **Animated**: View vibration modes
+- **Frequencies**: Natural frequencies (Hz)
+- **Participation**: Mass participation factors
 
-### Getting Design Suggestions
-```
-User: "Suggest section for 5m beam with 50 kNm moment"
-AI: {
-  "section": "300x450mm",
-  "reinforcement": "4-20mm + 8mm @ 150mm",
-  "confidence": 0.92
-}
-```
+---
 
-### Error Checking
-```
-User: "Check my model for errors"
-AI: Detects:
-- Duplicate nodes at (0, 0, 0)
-- Zero-length element #5
-- Load magnitude unusually high
-```
+## 🔍 Serviceability Checks
 
-### Auto-Modeling
-```
-User: "Create a 3-story building frame"
-AI: Generates complete geometry with:
-- Nodes at grid intersections
-- Columns and beams
-- Typical sections assigned
-```
+### Deflection Check
+1. Navigate to Checks → Deflection
+2. Input:
+   - Span length
+   - Actual deflection
+   - Member type
+3. Results:
+   - Allowable deflection
+   - Utilization percentage
+   - Pass/Fail status
 
-## Keyboard Shortcuts (Planned)
+### Crack Width Check
+1. Navigate to Checks → Crack Width
+2. Input:
+   - Steel stress
+   - Cover
+   - Bar diameter and spacing
+   - Exposure condition
+3. Results:
+   - Calculated crack width
+   - Allowable crack width
+   - Recommendations
 
-- `Ctrl + N` - New project
-- `Ctrl + S` - Save model
-- `Ctrl + O` - Open project
-- `Delete` - Delete selected items
-- `Ctrl + Z` - Undo
-- `Ctrl + Y` - Redo
-- `Space` - Toggle 3D viewer
+### Vibration Check
+1. Navigate to Checks → Vibration
+2. Input:
+   - Natural frequency
+   - Floor type (office, residential, hospital)
+3. Results:
+   - Minimum frequency requirement
+   - Peak acceleration
+   - Comfort criteria
 
-## Tips & Best Practices
+---
+
+## 💾 Import/Export
+
+### Import
+- **DXF/DWG**: Import CAD drawings
+- **IFC**: Import BIM models
+- **Excel**: Import node/element data
+- **CSV**: Import tabular data
+
+### Export
+- **Results**: Excel, CSV, PDF
+- **Reports**: Comprehensive design reports
+- **BBS**: Bar bending schedule
+- **BOQ**: Bill of quantities
+- **3D Model**: IFC, DXF formats
+
+---
+
+## ⚙️ Settings
+
+### Design Codes
+Configure default codes for:
+- Concrete design
+- Steel design
+- Seismic analysis
+- Wind analysis
+
+### Units
+Choose unit system:
+- **SI**: kN, m, MPa
+- **Imperial**: kip, ft, ksi
+- **Custom**: Define your own
+
+### Preferences
+- Auto-save interval
+- Grid spacing
+- Display options
+- Color schemes
+
+---
+
+## 🆘 Troubleshooting
+
+### Common Issues
+
+#### Analysis Not Running
+- **Check**: All nodes have supports
+- **Check**: Load cases are defined
+- **Check**: No disconnected elements
+
+#### Design Fails
+- **Solution**: Increase member size
+- **Solution**: Check material properties
+- **Solution**: Verify load combinations
+
+#### Slow Performance
+- **Solution**: Reduce mesh density
+- **Solution**: Limit number of elements
+- **Solution**: Close unused tabs
+
+---
+
+## 📞 Support
+
+### Getting Help
+- **Documentation**: This guide
+- **Video Tutorials**: Available in Help menu
+- **Support Email**: support@strumind.com
+- **Community Forum**: forum.strumind.com
+
+### Keyboard Shortcuts
+- **Ctrl + N**: New model
+- **Ctrl + S**: Save
+- **Ctrl + Z**: Undo
+- **Ctrl + Y**: Redo
+- **Delete**: Delete selected
+- **Esc**: Cancel operation
+
+---
+
+## 🎓 Best Practices
 
 ### Modeling
-1. **Start with templates** for common structures
-2. **Define restraints carefully** - fixed vs pinned
-3. **Use consistent units** - mm for geometry, kN for loads
-4. **Check node connectivity** before analysis
-5. **Name load cases clearly** for organization
+1. Start with a simple model
+2. Add complexity gradually
+3. Use consistent units
+4. Name elements logically
+5. Group similar elements
 
 ### Analysis
-1. **Run static analysis first** to check basic behavior
-2. **Verify support reactions** sum to applied loads
-3. **Check for warnings** about singular matrices
-4. **Use modal analysis** to understand dynamic behavior
-5. **Review deformed shape** for reasonableness
+1. Run static analysis first
+2. Check for warnings
+3. Verify reactions sum to loads
+4. Review deformed shape
+5. Check for unrealistic results
 
 ### Design
-1. **Select appropriate code** for your region
-2. **Review AI suggestions** before accepting
-3. **Check all limit states** (flexure, shear, deflection)
-4. **Optimize iteratively** for cost savings
-5. **Document design decisions** in comments
+1. Use appropriate safety factors
+2. Follow code requirements
+3. Check all limit states
+4. Review detailing
+5. Generate comprehensive reports
+
+---
+
+## 🚀 Advanced Features
+
+### AI Optimization
+- Automatic section optimization
+- Cost minimization
+- Weight reduction
+- ML-based suggestions
 
 ### Collaboration
-1. **Use comments** to communicate with team
-2. **Save frequently** to avoid data loss
-3. **Export regularly** for backup
-4. **Review change history** before major edits
-5. **Test in staging** before production use
+- Real-time multi-user editing
+- Comments and annotations
+- Version control
+- Change tracking
 
-## Troubleshooting
+### Automation
+- Batch analysis
+- Parametric studies
+- Template models
+- Custom scripts
 
-### Model Won't Analyze
-- Check for disconnected nodes
-- Verify all elements have materials/sections
-- Ensure at least one restraint exists
-- Check for zero-length elements
+---
 
-### Design Fails
-- Verify analysis completed successfully
-- Check if forces exceed section capacity
-- Review code-specific requirements
-- Try AI optimization for suggestions
+## 📊 Example Workflows
 
-### Export Issues
-- Ensure model is saved first
-- Check file permissions
-- Verify export format compatibility
-- Try different export format
+### Simple Beam Design
+1. Create model with 2 nodes
+2. Add beam element
+3. Apply supports (pinned at ends)
+4. Add UDL
+5. Run static analysis
+6. Design beam
+7. Generate report
 
-### Performance Issues
-- Reduce number of elements for large models
-- Close unused tabs
-- Clear browser cache
-- Use Chrome/Edge for best performance
+### Multi-Story Building
+1. Import floor plan (DXF)
+2. Extrude to create 3D model
+3. Define load cases (DL, LL, EQ, Wind)
+4. Run modal analysis
+5. Run response spectrum
+6. Design all members
+7. Check serviceability
+8. Generate BBS and BOQ
 
-## Support
+---
 
-- Documentation: See FEATURES.md for complete feature list
-- API Docs: http://localhost:8000/docs
-- Issues: GitHub Issues
-- Email: support@strumind.com (example)
+## 🎉 Tips & Tricks
 
-## Video Tutorials (Coming Soon)
+1. **Use Templates**: Start with pre-built models
+2. **Keyboard Shortcuts**: Speed up workflow
+3. **Save Often**: Auto-save is your friend
+4. **Check Units**: Verify before analysis
+5. **Review Results**: Always validate output
+6. **Learn Codes**: Understand design requirements
+7. **Ask Questions**: Use support resources
 
-1. Getting Started - First Model
-2. Advanced Modeling Techniques
-3. Load Application Best Practices
-4. Analysis and Results Interpretation
-5. Design Code Compliance
-6. BIM Integration Workflow
-7. AI Assistant Features
-8. Collaboration and Sharing
+---
+
+**Happy Designing! 🏗️**
+
+*StruMind - Empowering Engineers to Build Better Structures*
