@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import engine, Base
-from app.api import models, analysis, design, detailing, ml, bim, projects, collaboration, learning, seismic, templates
+from app.api import models, analysis, design, detailing, ml, bim, projects, collaboration, learning, seismic, wind, templates
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -33,6 +33,7 @@ app.include_router(bim.router, prefix="/api/bim", tags=["bim"])
 app.include_router(collaboration.router, prefix="/api/collaboration", tags=["collaboration"])
 app.include_router(learning.router, prefix="/api/learning", tags=["learning"])
 app.include_router(seismic.router, prefix="/api/seismic", tags=["seismic"])
+app.include_router(wind.router, prefix="/api/wind", tags=["wind"])
 app.include_router(templates.router, prefix="/api/templates", tags=["templates"])
 
 @app.get("/")
