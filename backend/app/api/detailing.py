@@ -5,11 +5,13 @@ from typing import Dict, List
 router = APIRouter()
 
 class DetailingRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_id: int
     design_id: int
     output_format: str  # DXF, IFC, PDF
 
 class DetailingResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_id: int
     bbs: List[Dict]  # Bar Bending Schedule
     boq: Dict  # Bill of Quantities

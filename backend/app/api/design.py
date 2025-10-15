@@ -5,12 +5,16 @@ from typing import Dict
 router = APIRouter()
 
 class DesignRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    
     model_id: int
     design_code: str  # IS456, ACI318, IS800, AISC
     element_type: str  # beam, column, foundation
     forces: Dict
 
 class DesignResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
+    
     model_id: int
     design_code: str
     reinforcement: Dict

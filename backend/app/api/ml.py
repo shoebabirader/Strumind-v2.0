@@ -15,14 +15,17 @@ error_checker = ErrorChecker()
 learning_pipeline = ContinuousLearningPipeline()
 
 class MLPredictRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_type: str  # auto_modeler, design_assistant, error_checker
     input_data: Dict
 
 class MLPredictResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_type: str
     predictions: Dict
 
 class MLTrainRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_type: str
     training_data: List[Dict]
 

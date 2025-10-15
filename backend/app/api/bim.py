@@ -10,15 +10,18 @@ ifc_handler = IFCHandler()
 viz_engine = VisualizationEngine()
 
 class IFCExportRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_id: int
     model_data: Dict
 
 class IFCExportResponse(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_id: int
     ifc_content: str
     download_url: str
 
 class VisualizationRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_id: int
     model_data: Dict
     analysis_results: Dict = None

@@ -8,12 +8,14 @@ router = APIRouter()
 learning_pipeline = ContinuousLearningPipeline()
 
 class FeedbackSubmission(BaseModel):
+    model_config = {"protected_namespaces": ()}
     project_id: int
     model_data: Dict
     user_feedback: Dict
     approved: bool
 
 class RetrainingRequest(BaseModel):
+    model_config = {"protected_namespaces": ()}
     model_type: str
     epochs: int = 10
 
