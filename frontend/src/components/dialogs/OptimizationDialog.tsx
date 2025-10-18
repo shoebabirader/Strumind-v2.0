@@ -43,10 +43,13 @@ export function OptimizationDialog({ open, onClose }: OptimizationDialogProps) {
         },
         objective: data.objective,
       });
-      console.log('Optimization result:', result);
+      // SECURITY FIX: Don't log potentially sensitive result data
+      console.log('Optimization completed successfully');
       onClose();
     } catch (error) {
-      console.error('Optimization failed:', error);
+      // SECURITY FIX: Sanitize error before logging
+      const sanitizedError = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ') : 'Unknown error';
+      console.error('Optimization failed:', sanitizedError);
     } finally {
       setLoading(false);
     }

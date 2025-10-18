@@ -1,23 +1,72 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, validator, Field
 from typing import List, Dict, Optional
 from app.engine.seismic import SeismicAnalysis, SeismicCode, SeismicZone, SoilType
+from app.core.validators import EngineeringValidator, SecurityValidator
 import numpy as np
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 class SeismicParameters(BaseModel):
-    code: str = "IS1893"  # IS1893, ASCE7, EC8
-    zone: str = "ZONE_IV"  # ZONE_II, ZONE_III, ZONE_IV, ZONE_V
-    importance_factor: float = 1.0
-    response_reduction_factor: float = 5.0
-    soil_type: str = "MEDIUM"  # ROCK, MEDIUM, SOFT
+    code: str = Field(default="IS1893", description="Seismic design code")
+    zone: str = Field(default="ZONE_IV", description="Seismic zone")
+    importance_factor: float = Field(default=1.0, ge=0.8, le=2.0, description="Importance factor")
+    response_reduction_factor: float = Field(default=5.0, ge=1.0, le=10.0, description="Response reduction factor")
+    soil_type: str = Field(default="MEDIUM", description="Soil type")
+    
+    @validator('code')
+    def validate_code(cls, v):
+        """Validate seismic code"""
+        allowed_codes = ['IS1893', 'ASCE7', 'EC8', 'IBC']
+        v = SecurityValidator.sanitize_string(v, max_length=20).upper()
+        if v not in allowed_codes:
+            raise ValueError(f"Invalid seismic code. Allowed: {allowed_codes}")
+        return v
+    
+    @validator('zone')
+    def validate_zone(cls, v):
+        """Validate seismic zone"""
+        allowed_zones = ['ZONE_II', 'ZONE_III', 'ZONE_IV', 'ZONE_V']
+        v = SecurityValidator.sanitize_string(v, max_length=20).upper()
+        if v not in allowed_zones:
+            raise ValueError(f"Invalid zone. Allowed: {allowed_zones}")
+        return v
+    
+    @validator('soil_type')
+    def validate_soil_type(cls, v):
+        """Validate soil type"""
+        allowed_types = ['ROCK', 'MEDIUM', 'SOFT', 'VERY_SOFT']
+        v = SecurityValidator.sanitize_string(v, max_length=20).upper()
+        if v not in allowed_types:
+            raise ValueError(f"Invalid soil type. Allowed: {allowed_types}")
+        return v
 
 class BaseShearRequest(BaseModel):
     parameters: SeismicParameters
-    total_weight: float  # in kN
-    building_height: float  # in meters
-    building_type: str = "RC_MRF"  # RC_MRF, STEEL_MRF, RC_SHEAR_WALL
+    total_weight: float = Field(gt=0, le=1e9, description="Total weight in kN")
+    building_height: float = Field(gt=0, le=1000, description="Building height in meters")
+    building_type: str = Field(default="RC_MRF", description="Building structural system")
+    
+    @validator('total_weight')
+    def validate_weight(cls, v):
+        """Validate total weight"""
+        return EngineeringValidator.validate_load(v, 'force')
+    
+    @validator('building_height')
+    def validate_height(cls, v):
+        """Validate building height"""
+        return EngineeringValidator.validate_dimension(v, 'height')
+    
+    @validator('building_type')
+    def validate_building_type(cls, v):
+        """Validate building type"""
+        allowed_types = ['RC_MRF', 'STEEL_MRF', 'RC_SHEAR_WALL', 'STEEL_BRACED', 'MASONRY']
+        v = SecurityValidator.sanitize_string(v, max_length=50).upper()
+        if v not in allowed_types:
+            raise ValueError(f"Invalid building type. Allowed: {allowed_types}")
+        return v
 
 class ResponseSpectrumRequest(BaseModel):
     parameters: SeismicParameters

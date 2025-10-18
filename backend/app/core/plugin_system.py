@@ -115,7 +115,16 @@ class PluginManager:
     """Manages plugin lifecycle and registration"""
     
     def __init__(self, plugin_dir: str = "plugins"):
-        self.plugin_dir = Path(plugin_dir)
+        # SECURITY FIX: Resolve and validate plugin directory
+        self.plugin_dir = Path(plugin_dir).resolve()
+        
+        # SECURITY FIX: Ensure plugin_dir is absolute and safe
+        if not self.plugin_dir.is_absolute():
+            raise ValueError("Plugin directory must be an absolute path")
+        
+        # Create plugin directory if it doesn't exist
+        self.plugin_dir.mkdir(parents=True, exist_ok=True)
+        
         self.plugins: Dict[str, PluginInterface] = {}
         self.plugin_types: Dict[str, List[str]] = {
             "analysis": [],
@@ -127,7 +136,10 @@ class PluginManager:
     
     def register_plugin(self, plugin: PluginInterface):
         """Register a plugin"""
+        # SECURITY FIX: Sanitize plugin name
         plugin_name = plugin.name
+        if not plugin_name.replace("_", "").replace("-", "").isalnum():
+            raise ValueError("Invalid plugin name. Only alphanumeric, underscore, and hyphen allowed.")
         
         if plugin_name in self.plugins:
             raise ValueError(f"Plugin '{plugin_name}' already registered")

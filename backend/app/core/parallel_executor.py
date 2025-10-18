@@ -9,6 +9,8 @@ import numpy as np
 from datetime import datetime
 
 
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 class ParallelExecutor:
     """Manages parallel execution of analysis tasks"""
     
@@ -20,6 +22,22 @@ class ParallelExecutor:
         self.process_pool = ProcessPoolExecutor(max_workers=max_workers)
         self.thread_pool = ThreadPoolExecutor(max_workers=max_workers * 2)
         self.active_tasks: Dict[str, dict] = {}
+    
+    def __enter__(self):
+        """Context manager entry"""
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - SECURITY FIX: Ensure resources are cleaned up"""
+        self.shutdown()
+        return False
+    
+    def shutdown(self):
+        """SECURITY FIX: Properly shutdown executors to prevent resource leaks"""
+        if hasattr(self, 'process_pool') and self.process_pool:
+            self.process_pool.shutdown(wait=True)
+        if hasattr(self, 'thread_pool') and self.thread_pool:
+            self.thread_pool.shutdown(wait=True)
     
     async def execute_parallel(self, tasks: List[Callable], use_processes: bool = True) -> List[Any]:
         """
@@ -57,7 +75,7 @@ class ParallelExecutor:
         # Create tasks for each load case
         tasks = []
         for i, load_case in enumerate(load_cases):
-            task_id = f"analysis_{i}_{datetime.utcnow().timestamp()}"
+            task_id = f"analysis_{i}_{utc_now().timestamp()}"
             
             # Store task info
             self.active_tasks[task_id] = {
@@ -70,12 +88,12 @@ class ParallelExecutor:
             # Create analysis task
             def analyze_case(model=model_data, loads=load_case, tid=task_id):
                 self.active_tasks[tid]["status"] = "running"
-                self.active_tasks[tid]["started_at"] = datetime.utcnow()
+                self.active_tasks[tid]["started_at"] = utc_now()
                 
                 try:
                     result = analyze_structure(model, loads)
                     self.active_tasks[tid]["status"] = "completed"
-                    self.active_tasks[tid]["completed_at"] = datetime.utcnow()
+                    self.active_tasks[tid]["completed_at"] = utc_now()
                     return result
                 except Exception as e:
                     self.active_tasks[tid]["status"] = "failed"

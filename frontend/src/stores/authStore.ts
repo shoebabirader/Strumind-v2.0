@@ -24,7 +24,14 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user, isAuthenticated: !!user }),
       
       setToken: (token) => {
+        // SECURITY FIX: Validate token format before storing
         if (token) {
+          // Basic JWT format validation (header.payload.signature)
+          const jwtPattern = /^[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+$/;
+          if (!jwtPattern.test(token)) {
+            console.error('Invalid token format');
+            return;
+          }
           localStorage.setItem('auth_token', token);
         } else {
           localStorage.removeItem('auth_token');

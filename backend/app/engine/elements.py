@@ -27,6 +27,13 @@ class ShellElement:
         
         Current status: NON-FUNCTIONAL - Do not use for analysis
         """
+        import warnings
+        warnings.warn(
+            "ShellElement.stiffness_matrix() is a placeholder returning zeros. "
+            "Do not use for structural analysis. Use beam/truss elements instead.",
+            UserWarning
+        )
+        
         t = self.thickness / 1000  # Convert to m
         E = self.E * 1e6  # Convert to Pa
         nu = self.nu

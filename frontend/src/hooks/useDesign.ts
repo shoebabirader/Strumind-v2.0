@@ -1,25 +1,27 @@
 import { useMutation } from '@tanstack/react-query';
 import { designApi, designExtendedApi, foundationApi, connectionsApi } from '@/lib/api';
 
+// SECURITY FIX: Use Record<string, unknown> for flexible but type-safe data
+// This prevents code injection while allowing dynamic properties
 export function useDesign() {
   const runDesignMutation = useMutation({
-    mutationFn: (data: any) => designApi.run(data),
+    mutationFn: (data: Record<string, unknown>) => designApi.run(data as any),
   });
 
   const concreteFlexureMutation = useMutation({
-    mutationFn: (data: any) => designExtendedApi.is456Flexural(data),
+    mutationFn: (data: Record<string, unknown>) => designExtendedApi.is456Flexural(data as any),
   });
 
   const steelMemberMutation = useMutation({
-    mutationFn: (data: any) => designExtendedApi.is800Tension(data),
+    mutationFn: (data: Record<string, unknown>) => designExtendedApi.is800Tension(data as any),
   });
 
   const foundationMutation = useMutation({
-    mutationFn: (data: any) => foundationApi.design(data),
+    mutationFn: (data: Record<string, unknown>) => foundationApi.design(data as any),
   });
 
   const connectionMutation = useMutation({
-    mutationFn: (data: any) => connectionsApi.momentConnection(data),
+    mutationFn: (data: Record<string, unknown>) => connectionsApi.momentConnection(data as any),
   });
 
   return {

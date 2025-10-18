@@ -1,6 +1,11 @@
 import numpy as np
 from scipy.linalg import lu_factor, lu_solve
 from scipy.sparse.linalg import eigs
+import logging
+from app.core.validators import EngineeringValidator
+
+# SECURITY FIX: Add logging for error tracking
+logger = logging.getLogger(__name__)
 
 class StructuralAnalysis:
     def __init__(self, geometry_engine):
@@ -50,21 +55,42 @@ class StructuralAnalysis:
         - Torsion
         - Shear deformation (optional)
         """
-        # Material properties
-        E = material_props.get('E', 200000)  # MPa (steel default)
-        G = material_props.get('G', E / (2 * (1 + 0.3)))  # Shear modulus
+        # SECURITY FIX: Validate material properties
+        try:
+            E = EngineeringValidator.validate_material_property(
+                material_props.get('E', 200000), 'E'
+            )
+            G_raw = material_props.get('G', E / (2 * (1 + 0.3)))
+            G = EngineeringValidator.validate_material_property(G_raw, 'G')
+        except ValueError as e:
+            logger.error(f"Invalid material properties for element {element.id}: {e}")
+            raise ValueError(f"Invalid material properties: {e}")
         
-        # Section properties
-        A = section_props.get('A', 10000)    # mm²
-        Iy = section_props.get('Iy', 1e7)    # mm⁴ (about z-axis)
-        Iz = section_props.get('Iz', 1e7)    # mm⁴ (about y-axis)
-        J = section_props.get('J', 1e6)      # mm⁴ (torsion constant)
+        # SECURITY FIX: Validate section properties
+        try:
+            A = EngineeringValidator.validate_section_property(
+                section_props.get('A', 10000), 'A'
+            )
+            Iy = EngineeringValidator.validate_section_property(
+                section_props.get('Iy', 1e7), 'Iy'
+            )
+            Iz = EngineeringValidator.validate_section_property(
+                section_props.get('Iz', 1e7), 'Iz'
+            )
+            J = EngineeringValidator.validate_section_property(
+                section_props.get('J', 1e6), 'J'
+            )
+        except ValueError as e:
+            logger.error(f"Invalid section properties for element {element.id}: {e}")
+            raise ValueError(f"Invalid section properties: {e}")
         
-        # Element length
+        # SECURITY FIX: Validate element length
         L = element.length()
-        
-        if L < 1e-6:
-            raise ValueError(f"Element {element.id} has zero length")
+        try:
+            L = EngineeringValidator.validate_dimension(L, 'length')
+        except ValueError as e:
+            logger.error(f"Invalid element length for element {element.id}: {e}")
+            raise ValueError(f"Element {element.id} has invalid length: {e}")
         
         # Initialize stiffness matrix
         k = np.zeros((12, 12))
@@ -239,15 +265,35 @@ class StructuralAnalysis:
             loads: Load vector (full size)
             restraints: Boundary conditions
         """
+        # SECURITY FIX: Add comprehensive error handling
         if self.K_global is None:
-            raise ValueError("Stiffness matrix not assembled")
+            raise ValueError("Stiffness matrix not assembled. Call assemble_stiffness_matrix first.")
         
-        # Apply boundary conditions
-        K_reduced = self.apply_boundary_conditions(restraints)
+        # Validate inputs
+        if not isinstance(loads, (list, np.ndarray)):
+            raise TypeError("Loads must be a list or numpy array")
         
-        # Extract free DOF loads
-        F = np.array(loads)
-        F_reduced = F[self.free_dofs]
+        if not isinstance(restraints, dict):
+            raise TypeError("Restraints must be a dictionary")
+        
+        try:
+            # Apply boundary conditions
+            K_reduced = self.apply_boundary_conditions(restraints)
+            
+            # Validate reduced stiffness matrix
+            if K_reduced.shape[0] == 0:
+                raise ValueError("No free DOFs - structure is fully restrained")
+            
+            # Extract free DOF loads
+            F = np.array(loads)
+            if len(F) != self.K_global.shape[0]:
+                raise ValueError(f"Load vector size mismatch. Expected {self.K_global.shape[0]}, got {len(F)}")
+            
+            F_reduced = F[self.free_dofs]
+            
+        except Exception as e:
+            logger.error(f"Error in static analysis setup: {str(e)}")
+            raise
         
         # Solve reduced system
         lu, piv = lu_factor(K_reduced)

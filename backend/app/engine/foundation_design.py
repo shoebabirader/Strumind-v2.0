@@ -199,21 +199,39 @@ class IsolatedFootingDesign:
     
     def _check_one_way_shear(self, P: float, L: float, B: float, D: float,
                             column_size: Dict, fck: float) -> Dict:
-        """Check one-way shear"""
+        """
+        Check one-way shear per IS 456:2000 Clause 34.2.4
         
-        d = D - 0.075  # Effective depth
-        c_x = column_size.get("width", 0.3)
+        Critical section is at distance 'd' from face of column
+        """
+        
+        d = D - 0.075  # Effective depth (m)
+        c_x = column_size.get("width", 0.3)  # Column width (m)
         
         # Critical section at d from column face
         x_crit = (L - c_x) / 2 - d
         
-        # Shear force
-        V = P * x_crit / L
+        # Validate x_crit to prevent negative values and unsafe designs
+        if x_crit < 0:
+            # Critical section is within or too close to column
+            # Use face of column as critical section (conservative)
+            x_crit = 0
+            return {
+                "status": "WARNING",
+                "demand": 0,
+                "capacity": 0,
+                "safety_factor": 999,
+                "message": f"Effective depth {d:.3f}m is too large for footing length {L:.3f}m. Critical section at column face.",
+                "warning": "Foundation depth may be excessive or footing too small"
+            }
         
-        # Shear capacity
+        # Shear force at critical section
+        V = P * x_crit / L  # N
+        
+        # Shear capacity per IS 456 Clause 40.2.1
         Vc = 0.17 * np.sqrt(fck) * B * d * 1000  # N
         
-        # Check
+        # Check shear adequacy
         status = "OK" if V <= Vc else "FAIL"
         safety_factor = Vc / V if V > 0 else 999
         
@@ -221,7 +239,8 @@ class IsolatedFootingDesign:
             "status": status,
             "demand": V,
             "capacity": Vc,
-            "safety_factor": safety_factor
+            "safety_factor": safety_factor,
+            "x_crit": x_crit
         }
     
     def _check_two_way_shear(self, P: float, L: float, B: float, D: float,

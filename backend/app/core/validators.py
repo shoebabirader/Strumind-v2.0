@@ -1,369 +1,519 @@
 """
-Comprehensive validation utilities for structural analysis
-Implements input validation, geometry checks, and data sanitization
+Security validators for input sanitization and validation
+Prevents injection attacks, validates data types, and ensures safe operations
 """
-import numpy as np
-from typing import List, Dict, Tuple, Optional
-from pydantic import BaseModel, field_validator, Field
+import re
+from typing import Any, Union
+from pathlib import Path
 
 
-class ValidationError(Exception):
-    """Base class for validation errors"""
-    pass
-
-
-class NodeValidator:
-    """Validator for node coordinates and properties"""
-    
-    COORDINATE_TOLERANCE = 1e-3  # mm
-    MAX_COORDINATE = 1e6  # mm (1 km)
+class SecurityValidator:
+    """Comprehensive security validation utilities"""
     
     @staticmethod
-    def validate_coordinates(x: float, y: float, z: float) -> Tuple[bool, Optional[str]]:
+    def sanitize_string(value: str, max_length: int = 1000) -> str:
         """
-        Validate node coordinates
-        
-        Returns:
-            (is_valid, error_message)
-        """
-        # Check for finite values
-        if not np.isfinite([x, y, z]).all():
-            return False, "Coordinates must be finite (not NaN or Inf)"
-        
-        # Check reasonable range
-        if abs(x) > NodeValidator.MAX_COORDINATE:
-            return False, f"X coordinate out of range (max ±{NodeValidator.MAX_COORDINATE}mm)"
-        if abs(y) > NodeValidator.MAX_COORDINATE:
-            return False, f"Y coordinate out of range (max ±{NodeValidator.MAX_COORDINATE}mm)"
-        if abs(z) > NodeValidator.MAX_COORDINATE:
-            return False, f"Z coordinate out of range (max ±{NodeValidator.MAX_COORDINATE}mm)"
-        
-        return True, None
-    
-    @staticmethod
-    def check_duplicate(x: float, y: float, z: float, existing_nodes: List) -> Tuple[bool, Optional[str]]:
-        """Check for duplicate nodes within tolerance"""
-        for node in existing_nodes:
-            dist = np.sqrt((x - node.x)**2 + (y - node.y)**2 + (z - node.z)**2)
-            if dist < NodeValidator.COORDINATE_TOLERANCE:
-                return True, f"Duplicate node detected near node {node.id} (distance: {dist:.6f}mm)"
-        
-        return False, None
-
-
-class MaterialValidator:
-    """Validator for material properties"""
-    
-    # Typical ranges for structural materials
-    E_MIN = 1000  # MPa (timber)
-    E_MAX = 500000  # MPa (high-strength steel)
-    NU_MIN = -1.0
-    NU_MAX = 0.5
-    DENSITY_MIN = 100  # kg/m³
-    DENSITY_MAX = 20000  # kg/m³
-    
-    @staticmethod
-    def validate_elastic_modulus(E: float) -> Tuple[bool, Optional[str]]:
-        """Validate Young's modulus"""
-        if E <= 0:
-            return False, "Young's modulus must be positive"
-        
-        if E < MaterialValidator.E_MIN:
-            return False, f"Young's modulus too low (min {MaterialValidator.E_MIN} MPa)"
-        
-        if E > MaterialValidator.E_MAX:
-            return False, f"Young's modulus too high (max {MaterialValidator.E_MAX} MPa)"
-        
-        return True, None
-    
-    @staticmethod
-    def validate_poisson_ratio(nu: float) -> Tuple[bool, Optional[str]]:
-        """Validate Poisson's ratio"""
-        if nu < MaterialValidator.NU_MIN or nu > MaterialValidator.NU_MAX:
-            return False, f"Poisson's ratio must be between {MaterialValidator.NU_MIN} and {MaterialValidator.NU_MAX}"
-        
-        return True, None
-
-    
-    @staticmethod
-    def validate_yield_stress(fy: float, fu: Optional[float] = None) -> Tuple[bool, Optional[str]]:
-        """Validate yield and ultimate stress"""
-        if fy <= 0:
-            return False, "Yield stress must be positive"
-        
-        if fu is not None:
-            if fu <= 0:
-                return False, "Ultimate stress must be positive"
-            if fy > fu:
-                return False, "Yield stress cannot exceed ultimate stress"
-        
-        return True, None
-    
-    @staticmethod
-    def validate_density(rho: float) -> Tuple[bool, Optional[str]]:
-        """Validate material density"""
-        if rho <= 0:
-            return False, "Density must be positive"
-        
-        if rho < MaterialValidator.DENSITY_MIN or rho > MaterialValidator.DENSITY_MAX:
-            return False, f"Density out of typical range ({MaterialValidator.DENSITY_MIN}-{MaterialValidator.DENSITY_MAX} kg/m³)"
-        
-        return True, None
-
-
-class SectionValidator:
-    """Validator for section properties"""
-    
-    @staticmethod
-    def validate_area(A: float) -> Tuple[bool, Optional[str]]:
-        """Validate cross-sectional area"""
-        if A <= 0:
-            return False, "Cross-sectional area must be positive"
-        
-        if A < 1:  # mm²
-            return False, "Cross-sectional area too small (min 1 mm²)"
-        
-        if A > 1e8:  # mm²
-            return False, "Cross-sectional area too large (max 1e8 mm²)"
-        
-        return True, None
-    
-    @staticmethod
-    def validate_moment_of_inertia(I: float, axis: str = "") -> Tuple[bool, Optional[str]]:
-        """Validate moment of inertia"""
-        if I <= 0:
-            return False, f"Moment of inertia{' about ' + axis if axis else ''} must be positive"
-        
-        if I < 1:  # mm⁴
-            return False, f"Moment of inertia{' about ' + axis if axis else ''} too small (min 1 mm⁴)"
-        
-        return True, None
-    
-    @staticmethod
-    def validate_section_properties(A: float, Iy: float, Iz: float, J: float) -> Tuple[bool, Optional[str]]:
-        """Validate complete section properties"""
-        # Area
-        is_valid, error = SectionValidator.validate_area(A)
-        if not is_valid:
-            return False, error
-        
-        # Moment of inertia about y-axis
-        is_valid, error = SectionValidator.validate_moment_of_inertia(Iy, "y-axis")
-        if not is_valid:
-            return False, error
-        
-        # Moment of inertia about z-axis
-        is_valid, error = SectionValidator.validate_moment_of_inertia(Iz, "z-axis")
-        if not is_valid:
-            return False, error
-        
-        # Torsion constant
-        if J <= 0:
-            return False, "Torsion constant must be positive"
-        
-        return True, None
-
-
-class LoadValidator:
-    """Validator for loads"""
-    
-    MAX_FORCE = 1e8  # N (100,000 kN)
-    MAX_MOMENT = 1e10  # N·mm (10,000 kN·m)
-    
-    @staticmethod
-    def validate_force(F: float, direction: str = "") -> Tuple[bool, Optional[str]]:
-        """Validate force magnitude"""
-        if not np.isfinite(F):
-            return False, f"Force{' in ' + direction if direction else ''} must be finite"
-        
-        if abs(F) > LoadValidator.MAX_FORCE:
-            return False, f"Force{' in ' + direction if direction else ''} magnitude too large (max {LoadValidator.MAX_FORCE} N)"
-        
-        return True, None
-    
-    @staticmethod
-    def validate_moment(M: float, axis: str = "") -> Tuple[bool, Optional[str]]:
-        """Validate moment magnitude"""
-        if not np.isfinite(M):
-            return False, f"Moment{' about ' + axis if axis else ''} must be finite"
-        
-        if abs(M) > LoadValidator.MAX_MOMENT:
-            return False, f"Moment{' about ' + axis if axis else ''} magnitude too large (max {LoadValidator.MAX_MOMENT} N·mm)"
-        
-        return True, None
-
-
-class GeometryValidator:
-    """Validator for structural geometry"""
-    
-    MIN_ELEMENT_LENGTH = 1.0  # mm
-    MAX_ASPECT_RATIO = 1000
-    
-    @staticmethod
-    def validate_element_length(length: float) -> Tuple[bool, Optional[str]]:
-        """Validate element length"""
-        if length < GeometryValidator.MIN_ELEMENT_LENGTH:
-            return False, f"Element length too small (min {GeometryValidator.MIN_ELEMENT_LENGTH} mm)"
-        
-        return True, None
-    
-    @staticmethod
-    def validate_element_connectivity(element, nodes_dict: Dict) -> Tuple[bool, Optional[str]]:
-        """Validate that element nodes exist"""
-        for node_id in element.node_ids:
-            if node_id not in nodes_dict:
-                return False, f"Node {node_id} referenced by element does not exist"
-        
-        return True, None
-    
-    @staticmethod
-    def check_stability(n_nodes: int, n_restraints: int, dimension: int = 3) -> Tuple[bool, Optional[str]]:
-        """
-        Check basic structural stability
+        Sanitize string input to prevent injection attacks
         
         Args:
-            n_nodes: Number of nodes
-            n_restraints: Number of restrained DOF
-            dimension: 2D or 3D (2 or 3)
+            value: Input string
+            max_length: Maximum allowed length
+            
+        Returns:
+            Sanitized string
         """
-        min_restraints = 3 if dimension == 2 else 6
+        if not isinstance(value, str):
+            raise ValueError("Input must be a string")
         
-        if n_restraints < min_restraints:
-            return False, f"Insufficient restraints (minimum {min_restraints} for {dimension}D structure)"
+        # Truncate to max length
+        value = value[:max_length]
         
-        dof_per_node = 3 if dimension == 2 else 6
-        total_dof = n_nodes * dof_per_node
+        # Remove control characters except newline and tab
+        value = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', value)
         
-        if n_restraints >= total_dof:
-            return False, "Structure is over-constrained (restraints ≥ total DOF)"
-        
-        return True, None
+        return value.strip()
     
     @staticmethod
-    def check_element_aspect_ratio(length: float, min_dimension: float) -> Tuple[bool, Optional[str]]:
-        """Check element aspect ratio"""
-        if min_dimension <= 0:
-            return False, "Element dimension must be positive"
+    def validate_numeric(value: Any, min_val: float = None, max_val: float = None,
+                        allow_negative: bool = True, allow_zero: bool = True) -> float:
+        """
+        Validate and sanitize numeric input
         
-        aspect_ratio = length / min_dimension
+        Args:
+            value: Input value
+            min_val: Minimum allowed value
+            max_val: Maximum allowed value
+            allow_negative: Whether negative values are allowed
+            allow_zero: Whether zero is allowed
+            
+        Returns:
+            Validated float value
+        """
+        try:
+            num = float(value)
+        except (ValueError, TypeError):
+            raise ValueError(f"Invalid numeric value: {value}")
         
-        if aspect_ratio > GeometryValidator.MAX_ASPECT_RATIO:
-            return False, f"Element aspect ratio too high ({aspect_ratio:.1f} > {GeometryValidator.MAX_ASPECT_RATIO})"
+        if not allow_negative and num < 0:
+            raise ValueError(f"Negative values not allowed: {num}")
         
-        return True, None
-
-
-class AnalysisValidator:
-    """Validator for analysis parameters"""
+        if not allow_zero and num == 0:
+            raise ValueError("Zero value not allowed")
+        
+        if min_val is not None and num < min_val:
+            raise ValueError(f"Value {num} below minimum {min_val}")
+        
+        if max_val is not None and num > max_val:
+            raise ValueError(f"Value {num} exceeds maximum {max_val}")
+        
+        if not (-1e308 < num < 1e308):  # Check for infinity
+            raise ValueError("Value out of valid range")
+        
+        return num
     
     @staticmethod
-    def validate_convergence_tolerance(tol: float) -> Tuple[bool, Optional[str]]:
-        """Validate convergence tolerance"""
-        if tol <= 0:
-            return False, "Convergence tolerance must be positive"
+    def validate_path(path: str, base_dir: str = None, must_exist: bool = False) -> Path:
+        """
+        Validate file path to prevent path traversal attacks
         
-        if tol < 1e-12:
-            return False, "Convergence tolerance too small (min 1e-12)"
+        Args:
+            path: File path to validate
+            base_dir: Base directory to restrict access to
+            must_exist: Whether path must exist
+            
+        Returns:
+            Validated Path object
+        """
+        if not isinstance(path, str):
+            raise ValueError("Path must be a string")
         
-        if tol > 1e-3:
-            return False, "Convergence tolerance too large (max 1e-3)"
+        # Remove null bytes
+        path = path.replace('\x00', '')
         
-        return True, None
+        # Convert to Path and resolve
+        path_obj = Path(path).resolve()
+        
+        # Check for path traversal
+        if base_dir:
+            base_path = Path(base_dir).resolve()
+            try:
+                path_obj.relative_to(base_path)
+            except ValueError:
+                raise ValueError(f"Path traversal attempt detected: {path}")
+        
+        # Check existence if required
+        if must_exist and not path_obj.exists():
+            raise ValueError(f"Path does not exist: {path}")
+        
+        return path_obj
     
     @staticmethod
-    def validate_max_iterations(max_iter: int) -> Tuple[bool, Optional[str]]:
-        """Validate maximum iterations"""
-        if max_iter < 1:
-            return False, "Maximum iterations must be at least 1"
+    def validate_identifier(value: str, max_length: int = 100) -> str:
+        """
+        Validate identifier (variable name, table name, etc.)
+        Only allows alphanumeric and underscore
         
-        if max_iter > 10000:
-            return False, "Maximum iterations too large (max 10000)"
+        Args:
+            value: Identifier to validate
+            max_length: Maximum length
+            
+        Returns:
+            Validated identifier
+        """
+        if not isinstance(value, str):
+            raise ValueError("Identifier must be a string")
         
-        return True, None
+        if not value:
+            raise ValueError("Identifier cannot be empty")
+        
+        if len(value) > max_length:
+            raise ValueError(f"Identifier too long (max {max_length})")
+        
+        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', value):
+            raise ValueError(f"Invalid identifier format: {value}")
+        
+        return value
     
     @staticmethod
-    def validate_time_step(dt: float, total_time: float) -> Tuple[bool, Optional[str]]:
-        """Validate time step for dynamic analysis"""
-        if dt <= 0:
-            return False, "Time step must be positive"
+    def validate_email(email: str) -> str:
+        """
+        Validate email address format
         
-        if total_time <= 0:
-            return False, "Total time must be positive"
+        Args:
+            email: Email address
+            
+        Returns:
+            Validated email
+        """
+        if not isinstance(email, str):
+            raise ValueError("Email must be a string")
         
-        if dt > total_time:
-            return False, "Time step cannot exceed total time"
+        email = email.strip().lower()
         
-        n_steps = int(total_time / dt)
-        if n_steps > 100000:
-            return False, f"Too many time steps ({n_steps}). Increase time step or reduce total time."
+        # Basic email validation
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        if not re.match(pattern, email):
+            raise ValueError(f"Invalid email format: {email}")
         
-        return True, None
-
-
-# Pydantic models with validation
-class ValidatedNodeCreate(BaseModel):
-    """Node creation with validation"""
-    project_id: int
-    node_id: str
-    x: float
-    y: float
-    z: float
+        if len(email) > 254:  # RFC 5321
+            raise ValueError("Email too long")
+        
+        return email
     
-    @field_validator('x', 'y', 'z')
-    @classmethod
-    def validate_coordinates(cls, v, info):
-        if not np.isfinite(v):
-            raise ValueError(f"{info.field_name} must be finite")
-        if abs(v) > NodeValidator.MAX_COORDINATE:
-            raise ValueError(f"{info.field_name} out of range")
-        return v
-
-
-class ValidatedMaterialCreate(BaseModel):
-    """Material creation with validation"""
-    project_id: int
-    material_id: str
-    name: str
-    E: float = Field(gt=0, description="Young's modulus (MPa)")
-    nu: float = Field(ge=-1, le=0.5, description="Poisson's ratio")
-    density: float = Field(gt=0, description="Density (kg/m³)")
-    fy: Optional[float] = Field(None, gt=0, description="Yield stress (MPa)")
-    fu: Optional[float] = Field(None, gt=0, description="Ultimate stress (MPa)")
+    @staticmethod
+    def sanitize_sql_like(value: str) -> str:
+        """
+        Sanitize value for SQL LIKE queries
+        Escapes special characters
+        
+        Args:
+            value: Input value
+            
+        Returns:
+            Sanitized value
+        """
+        if not isinstance(value, str):
+            raise ValueError("Value must be a string")
+        
+        # Escape SQL LIKE wildcards
+        value = value.replace('\\', '\\\\')
+        value = value.replace('%', '\\%')
+        value = value.replace('_', '\\_')
+        
+        return value
     
-    @field_validator('E')
-    @classmethod
-    def validate_E(cls, v):
-        is_valid, error = MaterialValidator.validate_elastic_modulus(v)
-        if not is_valid:
-            raise ValueError(error)
-        return v
-    
-    @field_validator('fy', 'fu')
-    @classmethod
-    def validate_stresses(cls, v, info):
-        # Note: In Pydantic V2, cross-field validation is done differently
-        # This is a simplified version
-        if v is not None:
-            # Additional validation can be added in model_validator
-            pass
-        return v
+    @staticmethod
+    def validate_url(url: str, allowed_schemes: list = None) -> str:
+        """
+        Validate URL to prevent SSRF attacks
+        
+        Args:
+            url: URL to validate
+            allowed_schemes: List of allowed schemes (default: ['http', 'https'])
+            
+        Returns:
+            Validated URL
+        """
+        if not isinstance(url, str):
+            raise ValueError("URL must be a string")
+        
+        if allowed_schemes is None:
+            allowed_schemes = ['http', 'https']
+        
+        url = url.strip()
+        
+        # Basic URL validation
+        pattern = r'^(https?):\/\/([\w\-\.]+)(:\d+)?(\/.*)?$'
+        match = re.match(pattern, url, re.IGNORECASE)
+        
+        if not match:
+            raise ValueError(f"Invalid URL format: {url}")
+        
+        scheme = match.group(1).lower()
+        if scheme not in allowed_schemes:
+            raise ValueError(f"URL scheme not allowed: {scheme}")
+        
+        # Prevent localhost/internal network access
+        host = match.group(2).lower()
+        blocked_hosts = ['localhost', '127.0.0.1', '0.0.0.0', '::1']
+        if host in blocked_hosts or host.startswith('192.168.') or host.startswith('10.'):
+            raise ValueError(f"Access to internal network not allowed: {host}")
+        
+        return url
 
 
-class ValidatedSectionCreate(BaseModel):
-    """Section creation with validation"""
-    project_id: int
-    section_id: str
-    name: str
-    section_type: str
-    A: float = Field(gt=0, description="Area (mm²)")
-    Iy: float = Field(gt=0, description="Moment of inertia about y (mm⁴)")
-    Iz: float = Field(gt=0, description="Moment of inertia about z (mm⁴)")
-    J: float = Field(gt=0, description="Torsion constant (mm⁴)")
+
+class EngineeringValidator:
+    """
+    Engineering-specific input validation
+    Validates structural engineering parameters
+    """
     
-    @field_validator('A')
-    @classmethod
-    def validate_area(cls, v):
-        is_valid, error = SectionValidator.validate_area(v)
-        if not is_valid:
-            raise ValueError(error)
-        return v
+    @staticmethod
+    def validate_material_property(value: float, property_name: str) -> float:
+        """
+        Validate material properties with engineering constraints
+        
+        Args:
+            value: Property value
+            property_name: Name of property (E, fy, fck, etc.)
+            
+        Returns:
+            Validated value
+        """
+        # Common ranges for material properties
+        ranges = {
+            'E': (1000, 500000),  # Elastic modulus (MPa): 1 GPa to 500 GPa
+            'G': (500, 200000),   # Shear modulus (MPa)
+            'fy': (200, 1000),    # Yield strength (MPa)
+            'fu': (300, 1500),    # Ultimate strength (MPa)
+            'fck': (10, 150),     # Concrete strength (MPa)
+            'density': (1000, 10000),  # kg/m³
+            'poisson': (0.0, 0.5),     # Poisson's ratio
+        }
+        
+        value = SecurityValidator.validate_numeric(
+            value,
+            allow_negative=False,
+            allow_zero=False
+        )
+        
+        if property_name in ranges:
+            min_val, max_val = ranges[property_name]
+            if not (min_val <= value <= max_val):
+                raise ValueError(
+                    f"{property_name} value {value} outside valid range "
+                    f"[{min_val}, {max_val}]"
+                )
+        
+        return value
+    
+    @staticmethod
+    def validate_section_property(value: float, property_name: str) -> float:
+        """
+        Validate section properties
+        
+        Args:
+            value: Property value
+            property_name: Name of property (A, I, J, etc.)
+            
+        Returns:
+            Validated value
+        """
+        # Section properties must be positive
+        value = SecurityValidator.validate_numeric(
+            value,
+            min_val=1e-6,  # Minimum to avoid numerical issues
+            allow_negative=False,
+            allow_zero=False
+        )
+        
+        # Maximum reasonable values (to catch input errors)
+        max_values = {
+            'A': 1e9,      # Area (mm²): ~1 m²
+            'Ix': 1e15,    # Moment of inertia (mm⁴)
+            'Iy': 1e15,
+            'Iz': 1e15,
+            'J': 1e15,     # Torsion constant (mm⁴)
+            'Zx': 1e12,    # Section modulus (mm³)
+            'Zy': 1e12,
+            'Zz': 1e12,
+        }
+        
+        if property_name in max_values:
+            if value > max_values[property_name]:
+                raise ValueError(
+                    f"{property_name} value {value} exceeds maximum "
+                    f"{max_values[property_name]}"
+                )
+        
+        return value
+    
+    @staticmethod
+    def validate_load(value: float, load_type: str = 'force') -> float:
+        """
+        Validate load values
+        
+        Args:
+            value: Load value
+            load_type: Type of load (force, moment, pressure, etc.)
+            
+        Returns:
+            Validated value
+        """
+        # Loads can be negative (direction)
+        value = SecurityValidator.validate_numeric(
+            value,
+            allow_negative=True,
+            allow_zero=True
+        )
+        
+        # Sanity check for unreasonably large loads
+        max_values = {
+            'force': 1e9,      # 1 GN
+            'moment': 1e12,    # 1 GN·m
+            'pressure': 1e6,   # 1000 MPa
+            'distributed': 1e6, # 1000 kN/m
+        }
+        
+        max_val = max_values.get(load_type, 1e12)
+        if abs(value) > max_val:
+            raise ValueError(
+                f"{load_type} value {value} exceeds reasonable limit {max_val}"
+            )
+        
+        return value
+    
+    @staticmethod
+    def validate_dimension(value: float, dimension_type: str = 'length') -> float:
+        """
+        Validate geometric dimensions
+        
+        Args:
+            value: Dimension value
+            dimension_type: Type (length, width, height, thickness, etc.)
+            
+        Returns:
+            Validated value
+        """
+        # Dimensions must be positive
+        value = SecurityValidator.validate_numeric(
+            value,
+            min_val=0.1,  # Minimum 0.1 mm
+            allow_negative=False,
+            allow_zero=False
+        )
+        
+        # Maximum reasonable dimensions
+        max_values = {
+            'length': 1000000,    # 1000 m
+            'width': 100000,      # 100 m
+            'height': 100000,     # 100 m
+            'thickness': 10000,   # 10 m
+            'diameter': 10000,    # 10 m
+            'spacing': 50000,     # 50 m
+        }
+        
+        max_val = max_values.get(dimension_type, 1000000)
+        if value > max_val:
+            raise ValueError(
+                f"{dimension_type} value {value} exceeds maximum {max_val}"
+            )
+        
+        return value
+    
+    @staticmethod
+    def validate_array_dimensions(array: list, expected_shape: tuple = None,
+                                  min_size: int = None, max_size: int = None) -> list:
+        """
+        Validate array dimensions and size
+        
+        Args:
+            array: Input array
+            expected_shape: Expected shape (rows, cols) for 2D arrays
+            min_size: Minimum array size
+            max_size: Maximum array size
+            
+        Returns:
+            Validated array
+        """
+        if not isinstance(array, (list, tuple)):
+            raise ValueError("Input must be a list or tuple")
+        
+        size = len(array)
+        
+        if min_size is not None and size < min_size:
+            raise ValueError(f"Array size {size} below minimum {min_size}")
+        
+        if max_size is not None and size > max_size:
+            raise ValueError(f"Array size {size} exceeds maximum {max_size}")
+        
+        # Check for 2D arrays
+        if expected_shape and len(expected_shape) == 2:
+            rows, cols = expected_shape
+            if size != rows:
+                raise ValueError(
+                    f"Array has {size} rows, expected {rows}"
+                )
+            for i, row in enumerate(array):
+                if not isinstance(row, (list, tuple)):
+                    raise ValueError(f"Row {i} is not a list/tuple")
+                if len(row) != cols:
+                    raise ValueError(
+                        f"Row {i} has {len(row)} columns, expected {cols}"
+                    )
+        
+        return array
+    
+    @staticmethod
+    def validate_dof(dof: int, max_dof: int = 6) -> int:
+        """
+        Validate degree of freedom index
+        
+        Args:
+            dof: DOF index
+            max_dof: Maximum DOF per node
+            
+        Returns:
+            Validated DOF
+        """
+        if not isinstance(dof, int):
+            raise ValueError("DOF must be an integer")
+        
+        if not (0 <= dof < max_dof):
+            raise ValueError(f"DOF {dof} out of range [0, {max_dof})")
+        
+        return dof
+    
+    @staticmethod
+    def validate_node_id(node_id: int, max_nodes: int = 1000000) -> int:
+        """
+        Validate node ID
+        
+        Args:
+            node_id: Node identifier
+            max_nodes: Maximum number of nodes
+            
+        Returns:
+            Validated node ID
+        """
+        if not isinstance(node_id, int):
+            raise ValueError("Node ID must be an integer")
+        
+        if node_id < 0:
+            raise ValueError("Node ID must be non-negative")
+        
+        if node_id >= max_nodes:
+            raise ValueError(f"Node ID {node_id} exceeds maximum {max_nodes}")
+        
+        return node_id
+    
+    @staticmethod
+    def validate_element_id(element_id: int, max_elements: int = 1000000) -> int:
+        """
+        Validate element ID
+        
+        Args:
+            element_id: Element identifier
+            max_elements: Maximum number of elements
+            
+        Returns:
+            Validated element ID
+        """
+        if not isinstance(element_id, int):
+            raise ValueError("Element ID must be an integer")
+        
+        if element_id < 0:
+            raise ValueError("Element ID must be non-negative")
+        
+        if element_id >= max_elements:
+            raise ValueError(f"Element ID {element_id} exceeds maximum {max_elements}")
+        
+        return element_id
+    
+    @staticmethod
+    def validate_design_code(code: str) -> str:
+        """
+        Validate design code identifier
+        
+        Args:
+            code: Design code (IS456, IS800, ACI318, etc.)
+            
+        Returns:
+            Validated code
+        """
+        code = SecurityValidator.sanitize_string(code, max_length=50)
+        
+        # List of supported codes
+        supported_codes = [
+            'IS456', 'IS800', 'IS1893', 'IS875',
+            'ACI318', 'AISC360', 'ASCE7',
+            'EC2', 'EC3', 'EC8',
+            'BS8110', 'BS5950',
+            'AS3600', 'AS4100',
+        ]
+        
+        if code.upper() not in supported_codes:
+            raise ValueError(f"Unsupported design code: {code}")
+        
+        return code.upper()

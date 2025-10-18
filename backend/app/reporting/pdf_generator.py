@@ -5,6 +5,8 @@ from typing import Dict, List
 from datetime import datetime
 import io
 
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 class PDFReportGenerator:
     """Generate professional structural engineering reports"""
     
@@ -20,7 +22,7 @@ class PDFReportGenerator:
         report = {
             "title": "Structural Analysis Report",
             "project": project_data,
-            "date": datetime.now().strftime("%Y-%m-%d"),
+            "date": utc_now().strftime("%Y-%m-%d"),
             "sections": []
         }
         
@@ -48,7 +50,7 @@ class PDFReportGenerator:
                 "project_name": project_data.get("name", "Untitled Project"),
                 "client": project_data.get("client", ""),
                 "location": project_data.get("location", ""),
-                "date": datetime.now().strftime("%B %d, %Y"),
+                "date": utc_now().strftime("%B %d, %Y"),
                 "prepared_by": "StruMind AI Platform",
                 "logo": "strumind_logo.png"
             }

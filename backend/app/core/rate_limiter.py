@@ -10,6 +10,8 @@ from typing import Dict, Tuple
 import asyncio
 
 
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 class RateLimiter(BaseHTTPMiddleware):
     """
     Rate limiting middleware
@@ -32,7 +34,7 @@ class RateLimiter(BaseHTTPMiddleware):
             return await call_next(request)
         
         # Check rate limit
-        now = datetime.utcnow()
+        now = utc_now()
         minute_ago = now - timedelta(minutes=1)
         
         # Remove old requests
@@ -70,7 +72,7 @@ class RateLimiter(BaseHTTPMiddleware):
         """Periodically clean up old entries to prevent memory leak"""
         while True:
             await asyncio.sleep(self.cleanup_interval)
-            now = datetime.utcnow()
+            now = utc_now()
             minute_ago = now - timedelta(minutes=1)
             
             # Clean up old entries

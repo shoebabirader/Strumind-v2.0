@@ -124,6 +124,15 @@ class PDeltaAnalysis:
             
             # Get axial force (compression positive for P-Delta)
             forces = element_forces[elem_id]
+            
+            # Validate force structure to prevent KeyError
+            if not isinstance(forces, dict):
+                continue
+            if 'node_1' not in forces or not isinstance(forces['node_1'], dict):
+                continue
+            if 'axial' not in forces['node_1']:
+                continue
+            
             axial_force = -forces['node_1']['axial']  # Negative because tension is positive in analysis
             
             # Calculate local geometric stiffness
@@ -385,6 +394,18 @@ class ResultsPostProcessor:
         element_stresses = {}
         
         for elem_id, forces in element_forces.items():
+            # Validate force structure to prevent KeyError
+            if not isinstance(forces, dict):
+                continue
+            if 'node_1' not in forces or not isinstance(forces['node_1'], dict):
+                continue
+            
+            # Check for required force components
+            node_1_forces = forces['node_1']
+            required_keys = ['axial', 'moment_y', 'moment_z', 'torsion', 'shear_y']
+            if not all(key in node_1_forces for key in required_keys):
+                continue
+            
             section = section_props.get(elem_id, section_props.get('default', {}))
             
             A = section.get('A', 1)  # mm²
@@ -395,11 +416,11 @@ class ResultsPostProcessor:
             b = section.get('b', 1)  # mm (width)
             
             # Node 1 stresses
-            N1 = forces['node_1']['axial']
-            My1 = forces['node_1']['moment_y']
-            Mz1 = forces['node_1']['moment_z']
-            T1 = forces['node_1']['torsion']
-            V1 = forces['node_1']['shear_y']
+            N1 = node_1_forces['axial']
+            My1 = node_1_forces['moment_y']
+            Mz1 = node_1_forces['moment_z']
+            T1 = node_1_forces['torsion']
+            V1 = node_1_forces['shear_y']
             
             # Axial stress
             sigma_axial_1 = N1 / A  # N/mm²

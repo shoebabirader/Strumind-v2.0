@@ -2,6 +2,8 @@ from typing import Dict, List
 import json
 from datetime import datetime
 
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 class IFCHandler:
     """Handle IFC file generation and parsing for BIM integration"""
     
@@ -41,7 +43,7 @@ class IFCHandler:
     
     def _generate_ifc_header(self) -> str:
         """Generate IFC file header"""
-        timestamp = datetime.now().isoformat()
+        timestamp = utc_now().isoformat()
         return f"""ISO-10303-21;
 HEADER;
 FILE_DESCRIPTION(('ViewDefinition [CoordinationView]'), '2;1');
@@ -70,11 +72,35 @@ DATA;
         return ''.join(ifc_entities)
     
     def _generate_ifc_properties(self, properties: Dict) -> str:
-        """Generate IFC property sets"""
+        """
+        Generate IFC property sets
+        SECURITY FIX: Sanitize property values to prevent injection
+        """
+        # Sanitize property values
+        design_code = self._sanitize_ifc_value(properties.get('design_code', 'IS456'))
+        material_grade = self._sanitize_ifc_value(properties.get('material_grade', 'M25'))
+        
         return f"""#1000=IFCPROPERTYSET('StructuralProperties', #1, 'Structural Analysis Properties', $, (#1001, #1002));
-#1001=IFCPROPERTYSINGLEVALUE('DesignCode', $, IFCTEXT('{properties.get('design_code', 'IS456')}'), $);
-#1002=IFCPROPERTYSINGLEVALUE('MaterialGrade', $, IFCTEXT('{properties.get('material_grade', 'M25')}'), $);
+#1001=IFCPROPERTYSINGLEVALUE('DesignCode', $, IFCTEXT('{design_code}'), $);
+#1002=IFCPROPERTYSINGLEVALUE('MaterialGrade', $, IFCTEXT('{material_grade}'), $);
 """
+    
+    def _sanitize_ifc_value(self, value: str) -> str:
+        """
+        Sanitize IFC property values to prevent injection
+        Removes quotes, newlines, and control characters
+        """
+        if not isinstance(value, str):
+            value = str(value)
+        
+        # Remove dangerous characters
+        sanitized = value.replace("'", "").replace('"', "").replace('\n', '').replace('\r', '')
+        
+        # Remove control characters
+        sanitized = ''.join(char for char in sanitized if ord(char) >= 32)
+        
+        # Limit length
+        return sanitized[:100]
     
     def _generate_ifc_footer(self) -> str:
         """Generate IFC file footer"""

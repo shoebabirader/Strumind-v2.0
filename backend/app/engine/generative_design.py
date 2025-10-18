@@ -84,10 +84,17 @@ class GenerativeDesign:
             Optimized topology
         """
         
-        # Initialize density field
+        # Initialize density field with validation
         nx = design_space.get("nx", 50)
         ny = design_space.get("ny", 50)
         nz = design_space.get("nz", 20)
+        
+        # Validate grid dimensions to prevent division by zero
+        if nx <= 0 or ny <= 0 or nz <= 0:
+            raise ValueError(
+                f"Grid dimensions must be positive integers. "
+                f"Got nx={nx}, ny={ny}, nz={nz}"
+            )
         
         density = np.ones((nx, ny, nz)) * 0.5  # Initial density
         
@@ -201,8 +208,12 @@ class GenerativeDesign:
         # Check constraints
         constraint_penalty = self._check_constraints(design, constraints)
         
-        # Multi-objective fitness
-        fitness = 1.0 / (weight + cost) - constraint_penalty
+        # Multi-objective fitness with division by zero protection
+        denominator = weight + cost
+        if denominator == 0:
+            denominator = 1e-10  # Small value to prevent division by zero
+        
+        fitness = 1.0 / denominator - constraint_penalty
         
         return fitness
     
@@ -317,7 +328,15 @@ class GenerativeDesign:
         
         # Optimality criteria method
         move = 0.2
-        density_new = density * np.sqrt(-sensitivity)
+        
+        # Calculate Lagrange multiplier (simplified)
+        lambda_val = np.mean(sensitivity)
+        if lambda_val == 0:
+            lambda_val = 1.0  # Prevent division by zero
+        
+        # Update densities using optimality criteria (OC method)
+        # Correct formula: x_new = x * sqrt(sensitivity / lambda)
+        density_new = density * np.sqrt(sensitivity / lambda_val)
         
         # Apply move limit
         density_new = np.maximum(density - move, np.minimum(density + move, density_new))

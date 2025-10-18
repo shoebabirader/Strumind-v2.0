@@ -32,10 +32,13 @@ export function SeismicDialog({ open, onClose }: SeismicDialogProps) {
     setLoading(true);
     try {
       const result = await seismicApi.calculateBaseShear(data);
-      console.log('Seismic analysis result:', result);
+      // SECURITY FIX: Don't log potentially sensitive result data
+      console.log('Seismic analysis completed successfully');
       onClose();
     } catch (error) {
-      console.error('Seismic analysis failed:', error);
+      // SECURITY FIX: Sanitize error before logging
+      const sanitizedError = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ') : 'Unknown error';
+      console.error('Seismic analysis failed:', sanitizedError);
     } finally {
       setLoading(false);
     }

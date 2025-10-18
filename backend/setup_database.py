@@ -29,12 +29,12 @@ def check_database():
             print(f"✅ Database file exists")
             
             # Check tables
+            # SECURITY FIX: Use context manager to ensure connection is closed
             try:
-                conn = sqlite3.connect(db_file)
-                cursor = conn.cursor()
-                cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-                tables = cursor.fetchall()
-                conn.close()
+                with sqlite3.connect(db_file) as conn:
+                    cursor = conn.cursor()
+                    cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+                    tables = cursor.fetchall()
                 
                 if tables:
                     print(f"✅ Tables found: {len(tables)}")

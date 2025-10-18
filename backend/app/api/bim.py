@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from typing import Dict
+import os
 from app.bim.ifc_handler import IFCHandler
 from app.bim.visualization import VisualizationEngine
 
@@ -44,10 +45,49 @@ def export_to_ifc(request: IFCExportRequest):
 @router.post("/import/ifc")
 async def import_from_ifc(file: UploadFile = File(...)):
     """Import IFC file and extract structural data"""
-    content = await file.read()
-    ifc_content = content.decode('utf-8')
+    # SECURITY FIX: Validate file type and size
+    ALLOWED_EXTENSIONS = {'.ifc', '.IFC'}
+    MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB
     
-    model_data = ifc_handler.import_from_ifc(ifc_content)
+    # Validate file extension
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Only IFC files are allowed. Got: {file_ext}"
+        )
+    
+    # Read and validate file size
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=413,
+            detail=f"File too large. Maximum size is {MAX_FILE_SIZE / (1024*1024)}MB"
+        )
+    
+    # Validate content is text-based (IFC files are text)
+    try:
+        ifc_content = content.decode('utf-8')
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid IFC file format. File must be valid UTF-8 text."
+        )
+    
+    # Validate IFC header
+    if not ifc_content.strip().startswith('ISO-10303-21'):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid IFC file. Missing ISO-10303-21 header."
+        )
+    
+    try:
+        model_data = ifc_handler.import_from_ifc(ifc_content)
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to parse IFC file: {str(e)}"
+        )
     
     return {
         "status": "success",

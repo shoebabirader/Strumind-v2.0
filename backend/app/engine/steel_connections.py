@@ -37,6 +37,13 @@ class SteelConnectionDesign:
             bolt_dia: Bolt diameter (mm)
             n_bolts: Number of bolts in tension zone
         """
+        # Validate beam depth to prevent division by zero
+        if beam_depth <= 100:
+            raise ValueError(
+                f"Beam depth must be greater than 100mm for moment connection. "
+                f"Got beam_depth={beam_depth}mm. Minimum recommended: 150mm"
+            )
+        
         # Bolt properties
         if self.code == "IS800":
             fub = 400  # MPa for Grade 4.6 bolts
@@ -91,6 +98,13 @@ class SteelConnectionDesign:
             flange_width: Flange width (mm)
             weld_size: Fillet weld size (mm)
         """
+        # Validate beam depth to prevent division by zero
+        if beam_depth <= 20:
+            raise ValueError(
+                f"Beam depth must be greater than 20mm for welded moment connection. "
+                f"Got beam_depth={beam_depth}mm. Minimum recommended: 100mm"
+            )
+        
         # Weld properties
         fu_weld = 410  # MPa
         throat_thickness = 0.7 * weld_size  # mm
@@ -226,6 +240,13 @@ class SteelConnectionDesign:
     def splice_connection(self, P: float, M: float, V: float,
                          section_depth: float, bolt_dia: float) -> Dict:
         """Design column or beam splice connection"""
+        # Validate section depth to prevent division by zero
+        if section_depth <= 100:
+            raise ValueError(
+                f"Section depth must be greater than 100mm for splice connection. "
+                f"Got section_depth={section_depth}mm. Minimum recommended: 150mm"
+            )
+        
         # Number of bolts required
         fub = 400
         Asb = np.pi * bolt_dia ** 2 / 4
@@ -235,6 +256,7 @@ class SteelConnectionDesign:
         n_shear = int(np.ceil(V / Vnsb)) + 2  # Add 2 for safety
         
         # Bolts for moment (tension/compression)
+        # Lever arm is section depth minus cover/edge distance (typically 100mm)
         lever_arm = section_depth - 100
         T = (M * 1000) / lever_arm
         Tnb = 0.9 * fub * 0.75 * Asb / (self.gamma_m1 * 1000)

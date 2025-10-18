@@ -7,6 +7,8 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 from app.core.security import get_current_active_user, TokenData
 
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 router = APIRouter()
 
 
@@ -60,7 +62,7 @@ async def create_version(
         "id": version_counter,
         "project_id": version.project_id,
         "version_number": version_number,
-        "created_at": datetime.utcnow(),
+        "created_at": utc_now(),
         "created_by": current_user.user_id,
         "commit_message": version.commit_message,
         "project_data": version.project_data,

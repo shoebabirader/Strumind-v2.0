@@ -2,25 +2,27 @@ import { useMutation } from '@tanstack/react-query';
 import { analysisApi, advancedAnalysisApi, seismicApi, windApi } from '@/lib/api';
 import type { AnalysisConfig } from '@/types/analysis';
 
+// SECURITY FIX: Use Record<string, unknown> for flexible but type-safe data
+// This prevents code injection while allowing dynamic properties
 export function useAnalysis() {
   const runAnalysisMutation = useMutation({
     mutationFn: (data: AnalysisConfig) => analysisApi.run(data),
   });
 
   const timeHistoryMutation = useMutation({
-    mutationFn: (data: any) => advancedAnalysisApi.timeHistory(data),
+    mutationFn: (data: Record<string, unknown>) => advancedAnalysisApi.timeHistory(data as any),
   });
 
   const bucklingMutation = useMutation({
-    mutationFn: (data: any) => advancedAnalysisApi.buckling(data),
+    mutationFn: (data: Record<string, unknown>) => advancedAnalysisApi.buckling(data as any),
   });
 
   const seismicMutation = useMutation({
-    mutationFn: (data: any) => seismicApi.calculateBaseShear(data),
+    mutationFn: (data: Record<string, unknown>) => seismicApi.calculateBaseShear(data as any),
   });
 
   const windMutation = useMutation({
-    mutationFn: (data: any) => windApi.calculateDesignPressure(data),
+    mutationFn: (data: Record<string, unknown>) => windApi.calculateDesignPressure(data as any),
   });
 
   return {

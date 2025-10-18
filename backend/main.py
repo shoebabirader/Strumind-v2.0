@@ -3,6 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.rate_limiter import RateLimiter
+# SECURITY FIX: Import security middleware
+from app.core.security_middleware import (
+    SecurityHeadersMiddleware,
+    RequestValidationMiddleware,
+    AuditLoggingMiddleware,
+    SSRFPreventionMiddleware
+)
 from app.api import (
     models, analysis, design, detailing, ml, bim, projects, 
     collaboration, learning, seismic, wind, pdelta, connections, 
@@ -15,6 +22,14 @@ from app.api import (
     results_processing, load_combinations, nonlinear, units,
     dynamic_analysis, advanced_elements
 )
+
+# SECURITY FIX: Import resource management
+from app.core.resource_monitor import get_resource_monitor
+from app.core.cleanup import get_cleanup_manager
+import asyncio
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Initialize database (optional - core features work without it)
 init_db()
@@ -35,16 +50,64 @@ app = FastAPI(
     }
 )
 
-# Rate limiting middleware (100 requests per minute)
+# SECURITY FIX: Startup event for resource monitoring
+@app.on_event("startup")
+async def startup_event():
+    """Initialize resource monitoring and cleanup on startup"""
+    logger.info("Starting StruMind API...")
+    
+    # Capture resource baseline
+    resource_monitor = get_resource_monitor()
+    resource_monitor.capture_baseline()
+    
+    # Perform initial cleanup
+    cleanup_manager = get_cleanup_manager()
+    cleanup_stats = cleanup_manager.full_cleanup()
+    logger.info(f"Initial cleanup completed: {cleanup_stats}")
+    
+    logger.info("StruMind API started successfully")
+
+# SECURITY FIX: Shutdown event for cleanup
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Cleanup resources on shutdown"""
+    logger.info("Shutting down StruMind API...")
+    
+    # Log final resource usage
+    resource_monitor = get_resource_monitor()
+    resource_monitor.log_resource_usage()
+    
+    # Perform final cleanup
+    cleanup_manager = get_cleanup_manager()
+    cleanup_stats = cleanup_manager.full_cleanup()
+    logger.info(f"Final cleanup completed: {cleanup_stats}")
+    
+    logger.info("StruMind API shutdown complete")
+
+# SECURITY FIX: Add security middleware stack (order matters!)
+# 1. Audit logging (first to log everything)
+app.add_middleware(AuditLoggingMiddleware)
+
+# 2. Security headers
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 3. SSRF prevention
+app.add_middleware(SSRFPreventionMiddleware)
+
+# 4. Request validation
+app.add_middleware(RequestValidationMiddleware)
+
+# 5. Rate limiting
 app.add_middleware(RateLimiter, requests_per_minute=100)
 
-# CORS middleware
+# 6. CORS (last in middleware chain)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Frontend origins
+    allow_origins=settings.CORS_ORIGINS,  # SECURITY FIX: Use config
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],  # SECURITY FIX: Explicit methods
     allow_headers=["*"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 # Include routers

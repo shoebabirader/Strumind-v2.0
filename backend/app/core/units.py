@@ -230,8 +230,22 @@ class ProjectUnits:
     
     def format_value(self, value: float, quantity_type: str, decimals: int = 2) -> str:
         """Format value with units for display"""
+        # SECURITY FIX: Validate inputs to prevent injection
+        if not isinstance(value, (int, float)):
+            raise ValueError("Value must be numeric")
+        if not isinstance(decimals, int) or decimals < 0 or decimals > 10:
+            raise ValueError("Decimals must be integer between 0 and 10")
+        
+        # Sanitize quantity_type to prevent injection
+        if not quantity_type.replace("_", "").isalnum():
+            raise ValueError("Invalid quantity_type format")
+        
         units = self.get_display_units()
         unit_str = units.get(quantity_type, "")
+        
+        # SECURITY FIX: Sanitize unit string
+        unit_str = unit_str.replace("<", "&lt;").replace(">", "&gt;")
+        
         return f"{value:.{decimals}f} {unit_str}"
 
 

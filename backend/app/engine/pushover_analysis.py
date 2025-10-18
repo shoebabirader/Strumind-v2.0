@@ -280,9 +280,25 @@ class PushoverAnalysis:
         
         # Build stiffness matrix from elements
         for elem_id, element in self.elements.items():
+            # Get element stiffness matrix (2x2 for simplified truss element)
             k_elem = self._get_element_stiffness(elem_id)
-            # Assemble into global matrix (simplified)
-            # In practice, use proper assembly with DOF mapping
+            
+            # Get node IDs for this element
+            node_i = element.get("node_i", 0)
+            node_j = element.get("node_j", 1)
+            
+            # Map to global DOF indices (using first DOF of each node for simplicity)
+            # In a full 3D frame, would map all 6 DOF per node
+            dof_i = node_i * 6  # First DOF of node i
+            dof_j = node_j * 6  # First DOF of node j
+            
+            # Assemble element stiffness into global matrix
+            # For 2x2 element stiffness: [[k11, k12], [k21, k22]]
+            if dof_i < n_dof and dof_j < n_dof:
+                K[dof_i, dof_i] += k_elem[0, 0]
+                K[dof_i, dof_j] += k_elem[0, 1]
+                K[dof_j, dof_i] += k_elem[1, 0]
+                K[dof_j, dof_j] += k_elem[1, 1]
         
         return K
     

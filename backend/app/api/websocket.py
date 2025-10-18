@@ -1,12 +1,33 @@
 """
 WebSocket endpoints for real-time collaboration
+SECURITY: Validates all messages and enforces authentication
 """
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Query
 from app.core.websocket_manager import manager
 from app.core.security import decode_access_token
 import json
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+
+def sanitize_message(message: dict) -> dict:
+    """
+    Sanitize WebSocket message to prevent injection attacks
+    """
+    # Remove dangerous keys
+    dangerous_keys = ['__proto__', 'constructor', 'prototype']
+    sanitized = {k: v for k, v in message.items() if k not in dangerous_keys}
+    
+    # Validate message type
+    if 'type' in sanitized:
+        allowed_types = ['state_update', 'cursor_move', 'chat', 'analysis_start', 'analysis_complete']
+        if sanitized['type'] not in allowed_types:
+            logger.warning(f"Invalid message type: {sanitized['type']}")
+            sanitized['type'] = 'unknown'
+    
+    return sanitized
 
 
 @router.websocket("/ws/projects/{project_id}")
@@ -44,7 +65,20 @@ async def websocket_endpoint(
         while True:
             # Receive message from client
             data = await websocket.receive_text()
-            message = json.loads(data)
+            
+            # SECURITY FIX: Validate JSON and sanitize message
+            try:
+                message = json.loads(data)
+                if not isinstance(message, dict):
+                    logger.warning(f"Invalid message format from user {user_id}")
+                    continue
+                
+                # Sanitize message
+                message = sanitize_message(message)
+                
+            except json.JSONDecodeError:
+                logger.warning(f"Invalid JSON from user {user_id}")
+                continue
             
             message_type = message.get("type")
             

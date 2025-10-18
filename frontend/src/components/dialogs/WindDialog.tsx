@@ -45,10 +45,13 @@ export function WindDialog({ open, onClose }: WindDialogProps) {
     setLoading(true);
     try {
       const result = await windApi.calculateDesignPressure(data);
-      console.log('Wind analysis result:', result);
+      // SECURITY FIX: Don't log potentially sensitive result data
+      console.log('Wind analysis completed successfully');
       onClose();
     } catch (error) {
-      console.error('Wind analysis failed:', error);
+      // SECURITY FIX: Sanitize error before logging
+      const sanitizedError = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ') : 'Unknown error';
+      console.error('Wind analysis failed:', sanitizedError);
     } finally {
       setLoading(false);
     }

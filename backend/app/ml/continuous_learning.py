@@ -5,6 +5,8 @@ from typing import Dict, List
 import json
 from pathlib import Path
 
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 class ContinuousLearningPipeline:
     """Manages continuous learning workflow for ML models"""
     def __init__(self, model_registry_path: str = "./ml_models"):
@@ -20,7 +22,7 @@ class ContinuousLearningPipeline:
         training_sample = {
             "data": anonymized_data,
             "feedback": user_feedback,
-            "timestamp": datetime.now().isoformat(),
+            "timestamp": utc_now().isoformat(),
             "approved": user_feedback.get("approved", False)
         }
         
@@ -111,15 +113,38 @@ class ContinuousLearningPipeline:
     
     def _save_training_sample(self, sample: Dict):
         """Save training sample to disk"""
-        timestamp = sample["timestamp"].replace(":", "-")
+        # SECURITY FIX: Sanitize timestamp to prevent path traversal
+        timestamp = sample["timestamp"].replace(":", "-").replace("/", "-").replace("\\", "-")
+        # Validate timestamp format
+        if not timestamp.replace("-", "").replace("T", "").replace(".", "").isalnum():
+            raise ValueError("Invalid timestamp format")
+        
+        # SECURITY FIX: Ensure filepath stays within registry_path
         filepath = self.registry_path / f"sample_{timestamp}.json"
+        filepath = filepath.resolve()
+        
+        # Verify the resolved path is still within registry_path
+        if not str(filepath).startswith(str(self.registry_path.resolve())):
+            raise ValueError("Path traversal attempt detected")
+        
         with open(filepath, 'w') as f:
             json.dump(sample, f)
     
     def _save_model_version(self, model, model_type: str) -> str:
         """Save model with version tracking"""
-        version = datetime.now().strftime("%Y%m%d_%H%M%S")
+        # SECURITY FIX: Sanitize model_type to prevent path traversal
+        # Only allow alphanumeric and underscore
+        if not model_type.replace("_", "").isalnum():
+            raise ValueError("Invalid model_type. Only alphanumeric and underscore allowed.")
+        
+        version = utc_now().strftime("%Y%m%d_%H%M%S")
         filepath = self.registry_path / f"{model_type}_v{version}.pt"
+        
+        # SECURITY FIX: Verify path is within registry_path
+        filepath = filepath.resolve()
+        if not str(filepath).startswith(str(self.registry_path.resolve())):
+            raise ValueError("Path traversal attempt detected")
+        
         torch.save(model.state_dict(), filepath)
         
         # Update version registry

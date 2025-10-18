@@ -8,6 +8,8 @@ import asyncio
 from datetime import datetime
 
 
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 class ConnectionManager:
     """Manages WebSocket connections for real-time collaboration"""
     
@@ -34,14 +36,14 @@ class ConnectionManager:
             await websocket.send_json({
                 "type": "state_sync",
                 "data": self.project_states[project_id],
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": utc_now().isoformat()
             })
         
         # Notify others that user joined
         await self.broadcast_to_project(project_id, {
             "type": "user_joined",
             "user_id": user_id,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": utc_now().isoformat()
         }, exclude=websocket)
     
     def disconnect(self, websocket: WebSocket, project_id: int):
@@ -58,7 +60,7 @@ class ConnectionManager:
             asyncio.create_task(self.broadcast_to_project(project_id, {
                 "type": "user_left",
                 "user_id": user_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": utc_now().isoformat()
             }))
     
     async def broadcast_to_project(self, project_id: int, message: dict, exclude: WebSocket = None):
@@ -99,7 +101,7 @@ class ConnectionManager:
             "type": "state_update",
             "data": state_update,
             "user_id": user_id,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": utc_now().isoformat()
         })
     
     async def send_analysis_progress(self, project_id: int, progress: dict):
@@ -107,7 +109,7 @@ class ConnectionManager:
         await self.broadcast_to_project(project_id, {
             "type": "analysis_progress",
             "data": progress,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": utc_now().isoformat()
         })
     
     async def send_cursor_position(self, project_id: int, user_id: int, position: dict, exclude: WebSocket = None):
@@ -116,7 +118,7 @@ class ConnectionManager:
             "type": "cursor_move",
             "user_id": user_id,
             "position": position,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": utc_now().isoformat()
         }, exclude=exclude)
     
     def get_active_users(self, project_id: int) -> List[int]:

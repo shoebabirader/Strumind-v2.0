@@ -6,10 +6,12 @@ from typing import Optional
 from datetime import datetime
 
 
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 class EngineeringDisclaimer(BaseModel):
     """Engineering software legal disclaimer"""
     version: str = "1.0"
-    last_updated: str = datetime.utcnow().isoformat()
+    last_updated: str = utc_now().isoformat()
     disclaimer: str = """
     ENGINEERING SOFTWARE DISCLAIMER
     
@@ -77,7 +79,7 @@ def create_acceptance_record(user_id: int, ip_address: Optional[str] = None,
     disclaimer = get_engineering_disclaimer()
     return LegalAcceptance(
         user_id=user_id,
-        accepted_at=datetime.utcnow(),
+        accepted_at=utc_now(),
         disclaimer_version=disclaimer.version,
         ip_address=ip_address,
         user_agent=user_agent

@@ -40,6 +40,10 @@ class ServiceabilityChecks:
             else:
                 limit_ratio = 250  # L/250
         
+        # Validate inputs to prevent division by zero
+        if limit_ratio <= 0:
+            raise ValueError(f"Limit ratio must be positive. Got limit_ratio={limit_ratio}")
+        
         # Calculate allowable deflection
         allowable_deflection = span / limit_ratio
         

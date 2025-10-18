@@ -53,10 +53,13 @@ export function FoundationDialog({ open, onClose }: FoundationDialogProps) {
         concrete_grade: data.concrete_grade,
         steel_grade: data.steel_grade,
       });
-      console.log('Foundation design result:', result);
+      // SECURITY FIX: Don't log potentially sensitive result data
+      console.log('Foundation design completed successfully');
       onClose();
     } catch (error) {
-      console.error('Foundation design failed:', error);
+      // SECURITY FIX: Sanitize error before logging
+      const sanitizedError = error instanceof Error ? error.message.replace(/[\r\n]/g, ' ') : 'Unknown error';
+      console.error('Foundation design failed:', sanitizedError);
     } finally {
       setLoading(false);
     }

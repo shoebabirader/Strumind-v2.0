@@ -8,6 +8,8 @@ import pickle
 from datetime import datetime, timedelta
 from functools import wraps
 import asyncio
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 
 
 class CacheManager:
@@ -39,7 +41,8 @@ class CacheManager:
         """Get value from cache"""
         # Check if key exists and not expired
         if key in self.cache:
-            if key in self.expiry and datetime.utcnow() > self.expiry[key]:
+            # SECURITY FIX: Use timezone-aware datetime
+            if key in self.expiry and utc_now() > self.expiry[key]:
                 # Expired
                 del self.cache[key]
                 del self.expiry[key]
@@ -59,7 +62,8 @@ class CacheManager:
         if ttl is None:
             ttl = self.default_ttl
         
-        self.expiry[key] = datetime.utcnow() + timedelta(seconds=ttl)
+        # SECURITY FIX: Use timezone-aware datetime
+        self.expiry[key] = utc_now() + timedelta(seconds=ttl)
     
     def delete(self, key: str):
         """Delete key from cache"""
@@ -98,7 +102,8 @@ class CacheManager:
         while True:
             await asyncio.sleep(300)  # Every 5 minutes
             
-            now = datetime.utcnow()
+            # SECURITY FIX: Use timezone-aware datetime
+            now = utc_now()
             expired_keys = [
                 key for key, expiry in self.expiry.items()
                 if now > expiry
@@ -197,7 +202,8 @@ class AnalysisCache:
         
         cache_data = {
             "results": results,
-            "cached_at": datetime.utcnow().isoformat(),
+            # SECURITY FIX: Use timezone-aware datetime
+            "cached_at": utc_now().isoformat(),
             "model_hash": model_hash,
             "analysis_type": analysis_type
         }

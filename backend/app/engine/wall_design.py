@@ -30,6 +30,10 @@ class ShearWallDesign:
             moment: Factored moment (kNm)
             boundary_element: Include boundary elements
         """
+        # Validate inputs to prevent division by zero
+        if thickness <= 0:
+            raise ValueError(f"Wall thickness must be positive. Got thickness={thickness}")
+        
         # Slenderness check
         slenderness_ratio = height / thickness
         

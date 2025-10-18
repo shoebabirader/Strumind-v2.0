@@ -12,6 +12,8 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy.orm import Session
 import logging
 from enum import Enum
+# SECURITY FIX: Use timezone-aware datetime
+from app.core.datetime_utils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -165,10 +167,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     """Create JWT access token"""
     to_encode = data.copy()
     
+    # SECURITY FIX: Use timezone-aware datetime
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = utc_now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = utc_now() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     
     to_encode.update({"exp": expire, "type": "access"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
@@ -178,7 +181,8 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
 def create_refresh_token(data: dict) -> str:
     """Create JWT refresh token"""
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    # SECURITY FIX: Use timezone-aware datetime
+    expire = utc_now() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire, "type": "refresh"})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -271,7 +275,8 @@ class RateLimiter:
     
     def is_allowed(self, client_id: str) -> bool:
         """Check if client is allowed to make request"""
-        now = datetime.utcnow()
+        # SECURITY FIX: Use timezone-aware datetime
+        now = utc_now()
         
         if client_id not in self.clients:
             self.clients[client_id] = []
@@ -295,7 +300,8 @@ class RateLimiter:
         if client_id not in self.clients:
             return self.requests
         
-        now = datetime.utcnow()
+        # SECURITY FIX: Use timezone-aware datetime
+        now = utc_now()
         recent_requests = [
             req_time for req_time in self.clients[client_id]
             if (now - req_time).total_seconds() < self.window
@@ -348,7 +354,8 @@ def log_audit_event(
 ):
     """Log an audit event"""
     log_entry = AuditLog(
-        timestamp=datetime.utcnow(),
+        # SECURITY FIX: Use timezone-aware datetime
+        timestamp=utc_now(),
         user_id=user.user_id,
         username=user.username,
         action=action,

@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ProjectDialog } from '@/components/dialogs/ProjectDialog';
 import { Plus, FolderOpen, Trash2 } from 'lucide-react';
 import { useModelStore } from '@/stores/modelStore';
+import { sanitizeForDisplay } from '@/lib/utils/sanitize';
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -47,7 +48,9 @@ export default function ProjectsPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">StruMind</h1>
-              <p className="text-sm text-gray-600">Welcome back, {user?.email}</p>
+              <p className="text-sm text-gray-600">
+                Welcome back, {user?.email ? sanitizeForDisplay(user.email) : 'User'}
+              </p>
             </div>
             <Button variant="outline" onClick={() => router.push('/workspace')}>
               Back to Workspace
@@ -100,10 +103,12 @@ export default function ProjectsPage() {
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <CardTitle className="text-lg">{project.name}</CardTitle>
+                      <CardTitle className="text-lg">
+                        {sanitizeForDisplay(project.name)}
+                      </CardTitle>
                       {project.description && (
                         <CardDescription className="mt-1">
-                          {project.description}
+                          {sanitizeForDisplay(project.description)}
                         </CardDescription>
                       )}
                     </div>
@@ -119,7 +124,7 @@ export default function ProjectsPage() {
                 <CardContent>
                   {project.description && (
                     <p className="text-sm text-gray-600 line-clamp-2">
-                      {project.description}
+                      {sanitizeForDisplay(project.description)}
                     </p>
                   )}
                   <div className="mt-4 flex items-center justify-between text-xs text-gray-500">

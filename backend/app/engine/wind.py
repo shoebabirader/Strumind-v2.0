@@ -126,6 +126,10 @@ class WindAnalysis:
         # Simplified - windward wall
         # For detailed analysis, need to consider all faces
         
+        # Validate inputs to prevent division by zero
+        if width <= 0:
+            raise ValueError(f"Building width must be positive. Got width={width}")
+        
         # Aspect ratio
         h_w = height / width
         
