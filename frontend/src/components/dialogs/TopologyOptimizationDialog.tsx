@@ -35,7 +35,7 @@ export function TopologyOptimizationDialog({ open, onClose }: TopologyOptimizati
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Topology Optimization</DialogTitle>

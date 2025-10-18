@@ -17,7 +17,7 @@ export function SettingsDialog({ open, onClose }: SettingsDialogProps) {
   const [autoSave, setAutoSave] = useState(true);
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>

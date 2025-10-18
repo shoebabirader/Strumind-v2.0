@@ -38,7 +38,7 @@ export function TemplateGallery({ open, onClose }: TemplateGalleryProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[800px] h-[600px] flex flex-col">
         <DialogHeader><DialogTitle>Template Gallery</DialogTitle></DialogHeader>
         <div className="flex-1 overflow-y-auto">

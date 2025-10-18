@@ -42,7 +42,7 @@ export function ReportDialog({ open, onClose }: ReportDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Generate Report</DialogTitle>

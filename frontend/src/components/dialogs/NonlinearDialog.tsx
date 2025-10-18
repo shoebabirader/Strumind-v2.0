@@ -56,7 +56,7 @@ export function NonlinearDialog({ open, onClose }: NonlinearDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Nonlinear Analysis</DialogTitle>

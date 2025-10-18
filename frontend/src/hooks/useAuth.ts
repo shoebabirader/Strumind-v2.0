@@ -6,17 +6,18 @@ import type { LoginRequest, RegisterRequest } from '@/types/auth';
 // Inline auth API to avoid module resolution issues
 const authApi = {
   login: async (data: LoginRequest) => {
-    const formData = new FormData();
-    formData.append('username', data.username);
-    formData.append('password', data.password);
-    const response = await apiClient.post('/api/auth/login', formData, {
+    // Convert to URLSearchParams for proper form encoding
+    const params = new URLSearchParams();
+    params.append('username', data.username);
+    params.append('password', data.password);
+    const response = await apiClient.post('/api/auth/login', params.toString(), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
     return response.data;
   },
   register: async (data: RegisterRequest) => {
     const response = await apiClient.post('/api/auth/register', data);
-    return response.data.data;
+    return response.data;
   },
   me: async () => {
     const response = await apiClient.get('/api/auth/me');
@@ -31,9 +32,9 @@ export function useAuth() {
   const { user, token, setUser, setToken, logout: clearAuth } = useAuthStore();
   const router = useRouter();
 
-  const login = async (email: string, password: string) => {
+  const login = async (username: string, password: string) => {
     try {
-      const data = await authApi.login({ username: email, password });
+      const data = await authApi.login({ username, password });
       setToken(data.access_token);
       const userData = await authApi.me();
       setUser(userData);

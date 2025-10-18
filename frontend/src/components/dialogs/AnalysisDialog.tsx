@@ -35,7 +35,7 @@ export function AnalysisDialog({ open, onClose }: AnalysisDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Run Analysis</DialogTitle>

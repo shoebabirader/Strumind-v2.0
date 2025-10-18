@@ -7,8 +7,13 @@ export function useNodes(projectId?: number) {
 
   const { data: nodes, isLoading, error } = useQuery({
     queryKey: ['nodes', projectId],
-    queryFn: () => projectId ? nodesApi.list(projectId) : Promise.resolve([]),
+    queryFn: async () => {
+      if (!projectId) return [];
+      return await nodesApi.list(projectId);
+    },
     enabled: !!projectId,
+    retry: 1,
+    staleTime: 5000,
   });
 
   const createMutation = useMutation({

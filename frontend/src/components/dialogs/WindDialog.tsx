@@ -58,7 +58,7 @@ export function WindDialog({ open, onClose }: WindDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Wind Analysis (IS 875)</DialogTitle>

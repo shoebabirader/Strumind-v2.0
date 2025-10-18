@@ -30,7 +30,7 @@ export function ResultsProcessingDialog({ open, onClose }: ResultsProcessingDial
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Results Processing</DialogTitle>

@@ -14,7 +14,7 @@ interface HelpDialogProps {
 
 export function HelpDialog({ open, onClose }: HelpDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

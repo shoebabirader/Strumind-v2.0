@@ -49,7 +49,7 @@ export function VersioningDialog({ open, onClose }: VersioningDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[600px] h-[600px] flex flex-col">
         <DialogHeader>
           <DialogTitle>Version Control</DialogTitle>

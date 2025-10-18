@@ -44,7 +44,7 @@ export function CacheDialog({ open, onClose }: CacheDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader><DialogTitle>Cache Management</DialogTitle></DialogHeader>
         <div className="space-y-4">

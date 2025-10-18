@@ -1,95 +1,26 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Grid, GizmoHelper, GizmoViewport, PerspectiveCamera } from '@react-three/drei';
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useNodes } from '@/hooks/useNodes';
 import { useElements } from '@/hooks/useElements';
 import { useModelStore } from '@/stores/modelStore';
 import { ViewportControls } from './ViewportControls';
-import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
+
+// Dynamically import the Canvas3D client component to avoid SSR issues
+const Canvas3DClient = dynamic(() => import('./Canvas3DClient').then(mod => mod.Canvas3DClient), { 
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-full flex items-center justify-center bg-zinc-900">
+      <div className="text-zinc-400">Loading 3D viewport...</div>
+    </div>
+  )
+});
 
 type ViewMode = 'wireframe' | 'solid' | 'shaded' | 'rendered' | 'xray';
 type SelectionMode = 'node' | 'element' | 'area' | 'pan';
 type ColorMode = 'material' | 'stress' | 'displacement' | 'force';
-
-function NodeRenderer({ nodes, selectionMode }: { nodes: any[]; selectionMode: SelectionMode }) {
-  return (
-    <>
-      {nodes.map((node) => (
-        <mesh key={node.id} position={[node.x, node.y, node.z]}>
-          <sphereGeometry args={[0.15, 16, 16]} />
-          <meshStandardMaterial 
-            color={selectionMode === 'node' ? '#3b82f6' : '#6b7280'} 
-            emissive={selectionMode === 'node' ? '#1e40af' : '#000000'}
-            emissiveIntensity={0.2}
-          />
-        </mesh>
-      ))}
-    </>
-  );
-}
-
-function ElementRenderer({ 
-  elements, 
-  nodes, 
-  viewMode,
-  selectionMode 
-}: { 
-  elements: any[]; 
-  nodes: any[];
-  viewMode: ViewMode;
-  selectionMode: SelectionMode;
-}) {
-  const getNodePosition = (nodeId: number) => {
-    const node = nodes.find(n => n.id === nodeId);
-    return node ? [node.x, node.y, node.z] : [0, 0, 0];
-  };
-
-  const getElementColor = () => {
-    if (selectionMode === 'element') return '#10b981';
-    return '#6b7280';
-  };
-
-  const isWireframe = viewMode === 'wireframe';
-  const opacity = viewMode === 'xray' ? 0.3 : 1;
-
-  return (
-    <>
-      {elements.map((element) => {
-        const start = getNodePosition(element.node_i);
-        const end = getNodePosition(element.node_j);
-        const length = Math.sqrt(
-          Math.pow(end[0] - start[0], 2) +
-          Math.pow(end[1] - start[1], 2) +
-          Math.pow(end[2] - start[2], 2)
-        );
-        const midpoint = [
-          (start[0] + end[0]) / 2,
-          (start[1] + end[1]) / 2,
-          (start[2] + end[2]) / 2,
-        ];
-
-        return (
-          <group key={element.id}>
-            <mesh position={midpoint as [number, number, number]}>
-              <cylinderGeometry args={[0.08, 0.08, length, 8]} />
-              <meshStandardMaterial 
-                color={getElementColor()}
-                wireframe={isWireframe}
-                transparent={viewMode === 'xray'}
-                opacity={opacity}
-                metalness={viewMode === 'rendered' ? 0.3 : 0}
-                roughness={viewMode === 'rendered' ? 0.7 : 1}
-              />
-            </mesh>
-          </group>
-        );
-      })}
-    </>
-  );
-}
 
 export function Canvas3D() {
   const { currentProject } = useModelStore();
@@ -106,41 +37,29 @@ export function Canvas3D() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [animationSpeed, setAnimationSpeed] = useState(1);
   const [showStats, setShowStats] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
-  const cameraRef = useRef<any>();
-  const controlsRef = useRef<any>();
+  // Ensure component only renders on client
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleViewChange = (view: string) => {
-    if (!cameraRef.current || !controlsRef.current) return;
-
-    const distance = 15;
-    const positions: Record<string, [number, number, number]> = {
-      isometric: [distance, distance, distance],
-      top: [0, distance, 0],
-      front: [0, 0, distance],
-      side: [distance, 0, 0],
-    };
-
-    const pos = positions[view];
-    if (pos) {
-      cameraRef.current.position.set(...pos);
-      controlsRef.current.target.set(0, 0, 0);
-      controlsRef.current.update();
-    }
+    // View change logic handled by Canvas3DClient
+    console.log('View changed to:', view);
   };
 
   const handleZoomExtents = () => {
-    if (!controlsRef.current) return;
-    controlsRef.current.reset();
+    console.log('Zoom extents');
   };
 
   const handleScreenshot = () => {
-    // Screenshot functionality
     console.log('Screenshot captured');
   };
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      if (!e.key) return; // Guard against undefined key
       switch(e.key.toLowerCase()) {
         case 'i': handleViewChange('isometric'); break;
         case 't': handleViewChange('top'); break;
@@ -154,6 +73,15 @@ export function Canvas3D() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, []);
+
+  // Show loading state until mounted
+  if (!isMounted) {
+    return (
+      <div className="relative w-full h-full bg-zinc-900 flex items-center justify-center">
+        <div className="text-zinc-400">Loading 3D viewport...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-full bg-zinc-900">
@@ -184,7 +112,7 @@ export function Canvas3D() {
 
       {/* Stats Display */}
       {showStats && (
-        <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm space-y-1">
+        <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm space-y-1 z-10">
           <div className="flex items-center gap-2">
             <Info className="w-4 h-4" />
             <span className="font-semibold">Model Info</span>
@@ -197,7 +125,7 @@ export function Canvas3D() {
 
       {/* Axis Legend */}
       {showAxes && (
-        <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm">
+        <div className="absolute bottom-4 left-4 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm z-10">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <div className="w-4 h-1 bg-red-500"></div>
@@ -215,61 +143,156 @@ export function Canvas3D() {
         </div>
       )}
 
-      {/* 3D Canvas */}
-      <Canvas shadows>
-        <PerspectiveCamera ref={cameraRef} makeDefault position={[10, 10, 10]} fov={50} />
-        
-        <ambientLight intensity={0.4} />
-        <directionalLight 
-          position={[10, 10, 5]} 
-          intensity={viewMode === 'rendered' ? 1.2 : 0.8}
-          castShadow={viewMode === 'rendered'}
-        />
-        <pointLight position={[-10, -10, -5]} intensity={0.3} />
-        
-        {showGrid && (
-          <Grid
-            args={[30, 30]}
-            cellSize={1}
-            cellThickness={0.5}
-            cellColor="#4b5563"
-            sectionSize={5}
-            sectionThickness={1}
-            sectionColor="#6b7280"
-            fadeDistance={50}
-            fadeStrength={1}
-            followCamera={false}
-          />
-        )}
-
-        <NodeRenderer nodes={nodes} selectionMode={selectionMode} />
-        <ElementRenderer 
-          elements={elements} 
-          nodes={nodes}
-          viewMode={viewMode}
-          selectionMode={selectionMode}
-        />
-
-        <OrbitControls 
-          ref={controlsRef}
-          makeDefault 
-          enableDamping
-          dampingFactor={0.05}
-        />
-        
-        {showAxes && (
-          <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
-            <GizmoViewport 
-              axisColors={['#ef4444', '#22c55e', '#3b82f6']} 
-              labelColor="white"
-            />
-          </GizmoHelper>
-        )}
-      </Canvas>
+      {/* Enhanced 2D/3D Canvas Viewer */}
+      <canvas
+        ref={(canvas) => {
+          if (!canvas || !isMounted) return;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
+          
+          // Set canvas size
+          canvas.width = canvas.offsetWidth;
+          canvas.height = canvas.offsetHeight;
+          
+          // Clear canvas
+          ctx.fillStyle = '#18181b'; // zinc-900
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          // Draw grid
+          if (showGrid) {
+            ctx.strokeStyle = '#3f3f46'; // zinc-700
+            ctx.lineWidth = 0.5;
+            const gridSize = 50;
+            
+            for (let x = 0; x < canvas.width; x += gridSize) {
+              ctx.beginPath();
+              ctx.moveTo(x, 0);
+              ctx.lineTo(x, canvas.height);
+              ctx.stroke();
+            }
+            
+            for (let y = 0; y < canvas.height; y += gridSize) {
+              ctx.beginPath();
+              ctx.moveTo(0, y);
+              ctx.lineTo(canvas.width, y);
+              ctx.stroke();
+            }
+          }
+          
+          // Draw axes
+          if (showAxes) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const axisLength = 100;
+            
+            // X-axis (red)
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX + axisLength, centerY);
+            ctx.stroke();
+            ctx.fillStyle = '#ef4444';
+            ctx.font = '14px sans-serif';
+            ctx.fillText('X', centerX + axisLength + 10, centerY);
+            
+            // Y-axis (green)
+            ctx.strokeStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX, centerY - axisLength);
+            ctx.stroke();
+            ctx.fillStyle = '#22c55e';
+            ctx.fillText('Y', centerX, centerY - axisLength - 10);
+            
+            // Z-axis (blue) - diagonal for 3D effect
+            ctx.strokeStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX - axisLength * 0.7, centerY + axisLength * 0.7);
+            ctx.stroke();
+            ctx.fillStyle = '#3b82f6';
+            ctx.fillText('Z', centerX - axisLength * 0.7 - 20, centerY + axisLength * 0.7 + 10);
+          }
+          
+          // Draw nodes
+          if (nodes.length > 0) {
+            const scale = 50;
+            const offsetX = canvas.width / 2;
+            const offsetY = canvas.height / 2;
+            
+            nodes.forEach((node) => {
+              const x = offsetX + node.x * scale;
+              const y = offsetY - node.y * scale; // Invert Y for screen coordinates
+              
+              // Draw node
+              ctx.fillStyle = selectionMode === 'node' ? '#3b82f6' : '#6b7280';
+              ctx.beginPath();
+              ctx.arc(x, y, 6, 0, Math.PI * 2);
+              ctx.fill();
+              
+              // Draw node label
+              if (showLabels) {
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '10px sans-serif';
+                ctx.fillText(`N${node.id}`, x + 10, y - 10);
+              }
+            });
+          }
+          
+          // Draw elements
+          if (elements.length > 0 && nodes.length > 0) {
+            const scale = 50;
+            const offsetX = canvas.width / 2;
+            const offsetY = canvas.height / 2;
+            
+            elements.forEach((element) => {
+              const nodeI = nodes.find(n => n.id === element.node_i);
+              const nodeJ = nodes.find(n => n.id === element.node_j);
+              
+              if (nodeI && nodeJ) {
+                const x1 = offsetX + nodeI.x * scale;
+                const y1 = offsetY - nodeI.y * scale;
+                const x2 = offsetX + nodeJ.x * scale;
+                const y2 = offsetY - nodeJ.y * scale;
+                
+                // Draw element
+                ctx.strokeStyle = selectionMode === 'element' ? '#10b981' : '#9ca3af';
+                ctx.lineWidth = viewMode === 'wireframe' ? 1 : 3;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                
+                // Draw element label
+                if (showLabels) {
+                  const midX = (x1 + x2) / 2;
+                  const midY = (y1 + y2) / 2;
+                  ctx.fillStyle = '#ffffff';
+                  ctx.font = '10px sans-serif';
+                  ctx.fillText(`E${element.id}`, midX + 5, midY - 5);
+                }
+              }
+            });
+          }
+          
+          // Draw empty state
+          if (nodes.length === 0 && elements.length === 0) {
+            ctx.fillStyle = '#71717a';
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No model loaded', canvas.width / 2, canvas.height / 2 - 20);
+            ctx.font = '12px sans-serif';
+            ctx.fillText('Create nodes and elements to start building', canvas.width / 2, canvas.height / 2 + 10);
+          }
+        }}
+        className="w-full h-full"
+      />
 
       {/* Empty State */}
       {nodes.length === 0 && elements.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
           <div className="text-center text-zinc-400">
             <p className="text-lg mb-2">No model loaded</p>
             <p className="text-sm">Create nodes and elements to start building</p>

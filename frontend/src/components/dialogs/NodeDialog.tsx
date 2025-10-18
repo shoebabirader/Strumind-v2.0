@@ -13,6 +13,7 @@ import { useNodes } from '@/hooks/useNodes';
 import { useModelStore } from '@/stores/modelStore';
 
 const nodeSchema = z.object({
+  node_id: z.string().min(1, 'Node ID is required'),
   x: z.number(),
   y: z.number(),
   z: z.number(),
@@ -39,9 +40,10 @@ export function NodeDialog({ open, onClose, nodeId }: NodeDialogProps) {
   const { createNode, updateNode } = useNodes(currentProject?.id);
   const [loading, setLoading] = useState(false);
 
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<NodeFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<NodeFormData>({
     resolver: zodResolver(nodeSchema),
     defaultValues: {
+      node_id: '',
       x: 0,
       y: 0,
       z: 0,
@@ -57,31 +59,81 @@ export function NodeDialog({ open, onClose, nodeId }: NodeDialogProps) {
   });
 
   const onSubmit = async (data: NodeFormData) => {
-    if (!currentProject) return;
+    if (!currentProject) {
+      alert('No project selected. Please create or select a project first.');
+      return;
+    }
     
     setLoading(true);
     try {
+      // Convert restraints object to array format expected by backend
+      const restraintsArray = [
+        data.restraints.dx,
+        data.restraints.dy,
+        data.restraints.dz,
+        data.restraints.rx,
+        data.restraints.ry,
+        data.restraints.rz,
+      ];
+      
+      const nodeData: any = {
+        node_id: data.node_id,
+        x: data.x,
+        y: data.y,
+        z: data.z,
+        restraints: restraintsArray,
+        project_id: currentProject.id,
+      };
+      
       if (nodeId) {
-        await updateNode({ id: nodeId, data: { ...data, project_id: currentProject.id } });
+        await updateNode({ id: nodeId, data: nodeData });
       } else {
-        await createNode({ ...data, project_id: currentProject.id });
+        await createNode(nodeData);
       }
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save node:', error);
+      
+      // Extract error message
+      let errorMsg = 'Unknown error';
+      if (error?.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (typeof detail === 'string') {
+          errorMsg = detail;
+        } else if (Array.isArray(detail)) {
+          errorMsg = detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ');
+        } else {
+          errorMsg = JSON.stringify(detail);
+        }
+      } else if (error?.message) {
+        errorMsg = error.message;
+      }
+      
+      alert(`Failed to save node: ${errorMsg}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{nodeId ? 'Edit Node' : 'Create Node'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div>
+            <Label htmlFor="node_id">Node ID</Label>
+            <Input
+              id="node_id"
+              type="text"
+              placeholder="N1"
+              {...register('node_id')}
+            />
+            {errors.node_id && <p className="text-sm text-red-500">{errors.node_id.message}</p>}
+          </div>
+
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label htmlFor="x">X Coordinate</Label>

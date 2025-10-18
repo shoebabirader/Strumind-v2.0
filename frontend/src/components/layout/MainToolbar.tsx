@@ -5,10 +5,13 @@ import { Button } from '@/components/ui/button';
 import { ProjectDialog } from '@/components/dialogs/ProjectDialog';
 import { NodeDialog } from '@/components/dialogs/NodeDialog';
 import { ElementDialog } from '@/components/dialogs/ElementDialog';
+import { MaterialDialog } from '@/components/dialogs/MaterialDialog';
+import { LoadDialog } from '@/components/dialogs/LoadDialog';
 import { AnalysisDialog } from '@/components/dialogs/AnalysisDialog';
 import { SeismicDialog } from '@/components/dialogs/SeismicDialog';
 import { WindDialog } from '@/components/dialogs/WindDialog';
 import { DesignDialog } from '@/components/dialogs/DesignDialog';
+import { DetailingDialog } from '@/components/dialogs/DetailingDialog';
 import { FoundationDialog } from '@/components/dialogs/FoundationDialog';
 import { ReportDialog } from '@/components/dialogs/ReportDialog';
 import { AIAssistantDialog } from '@/components/dialogs/AIAssistantDialog';
@@ -27,10 +30,13 @@ export function MainToolbar() {
   const [projectDialogOpen, setProjectDialogOpen] = useState(false);
   const [nodeDialogOpen, setNodeDialogOpen] = useState(false);
   const [elementDialogOpen, setElementDialogOpen] = useState(false);
+  const [materialDialogOpen, setMaterialDialogOpen] = useState(false);
+  const [loadDialogOpen, setLoadDialogOpen] = useState(false);
   const [analysisDialogOpen, setAnalysisDialogOpen] = useState(false);
   const [seismicDialogOpen, setSeismicDialogOpen] = useState(false);
   const [windDialogOpen, setWindDialogOpen] = useState(false);
   const [designDialogOpen, setDesignDialogOpen] = useState(false);
+  const [detailingDialogOpen, setDetailingDialogOpen] = useState(false);
   const [foundationDialogOpen, setFoundationDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [aiDialogOpen, setAiDialogOpen] = useState(false);
@@ -53,6 +59,16 @@ export function MainToolbar() {
         <Button size="sm" variant="ghost" onClick={() => setElementDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Element
+        </Button>
+        
+        <Button size="sm" variant="ghost" onClick={() => setMaterialDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Material
+        </Button>
+        
+        <Button size="sm" variant="ghost" onClick={() => setLoadDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Load
         </Button>
         
         <div className="h-6 w-px bg-gray-300" />
@@ -79,6 +95,11 @@ export function MainToolbar() {
           Design
         </Button>
         
+        <Button size="sm" variant="ghost" onClick={() => setDetailingDialogOpen(true)}>
+          <Hammer className="h-4 w-4 mr-2" />
+          Detailing
+        </Button>
+        
         <Button size="sm" variant="ghost" onClick={() => setFoundationDialogOpen(true)}>
           Foundation
         </Button>
@@ -99,10 +120,13 @@ export function MainToolbar() {
       <ProjectDialog open={projectDialogOpen} onClose={() => setProjectDialogOpen(false)} />
       <NodeDialog open={nodeDialogOpen} onClose={() => setNodeDialogOpen(false)} />
       <ElementDialog open={elementDialogOpen} onClose={() => setElementDialogOpen(false)} />
+      <MaterialDialog open={materialDialogOpen} onClose={() => setMaterialDialogOpen(false)} />
+      <LoadDialog open={loadDialogOpen} onClose={() => setLoadDialogOpen(false)} />
       <AnalysisDialog open={analysisDialogOpen} onClose={() => setAnalysisDialogOpen(false)} />
       <SeismicDialog open={seismicDialogOpen} onClose={() => setSeismicDialogOpen(false)} />
       <WindDialog open={windDialogOpen} onClose={() => setWindDialogOpen(false)} />
       <DesignDialog open={designDialogOpen} onClose={() => setDesignDialogOpen(false)} />
+      <DetailingDialog open={detailingDialogOpen} onClose={() => setDetailingDialogOpen(false)} />
       <FoundationDialog open={foundationDialogOpen} onClose={() => setFoundationDialogOpen(false)} />
       <ReportDialog open={reportDialogOpen} onClose={() => setReportDialogOpen(false)} />
       <AIAssistantDialog open={aiDialogOpen} onClose={() => setAiDialogOpen(false)} />

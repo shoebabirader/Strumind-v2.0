@@ -15,7 +15,7 @@ export function DesignExtendedDialog({ open, onClose }: DesignExtendedDialogProp
   const [loading, setLoading] = useState(false);
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Extended Design Features</DialogTitle>

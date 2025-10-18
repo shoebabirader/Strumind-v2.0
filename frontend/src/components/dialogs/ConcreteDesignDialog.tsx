@@ -31,7 +31,7 @@ export function ConcreteDesignDialog({ open, onClose }: ConcreteDesignDialogProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Concrete Design (IS 456:2000)</DialogTitle>

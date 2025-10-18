@@ -37,7 +37,7 @@ export function RetainingWallDialog({ open, onClose }: RetainingWallDialogProps)
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Retaining Wall Design</DialogTitle>

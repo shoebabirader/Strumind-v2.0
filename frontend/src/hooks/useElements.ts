@@ -7,8 +7,13 @@ export function useElements(projectId?: number) {
 
   const { data: elements, isLoading, error } = useQuery({
     queryKey: ['elements', projectId],
-    queryFn: () => projectId ? elementsApi.list(projectId) : Promise.resolve([]),
+    queryFn: async () => {
+      if (!projectId) return [];
+      return await elementsApi.list(projectId);
+    },
     enabled: !!projectId,
+    retry: 1,
+    staleTime: 5000,
   });
 
   const createMutation = useMutation({

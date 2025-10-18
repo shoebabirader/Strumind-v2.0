@@ -2,6 +2,9 @@
 
 **Professional Structural Analysis & Design Software**
 
+> 📚 **Documentation**: All detailed documentation has been moved to the [`docs/`](docs/) directory.  
+> See [`docs/INDEX.md`](docs/INDEX.md) for a complete index or [`docs/EVERYTHING_IS_READY.md`](docs/EVERYTHING_IS_READY.md) to get started.
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Next.js](https://img.shields.io/badge/Next.js-15.5.6-black)](https://nextjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-009688)](https://fastapi.tiangolo.com/)

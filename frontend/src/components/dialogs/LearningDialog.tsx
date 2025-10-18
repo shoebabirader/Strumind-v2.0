@@ -11,7 +11,7 @@ interface LearningDialogProps {
 
 export function LearningDialog({ open, onClose }: LearningDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Learning Resources</DialogTitle>

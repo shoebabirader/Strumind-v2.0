@@ -517,3 +517,133 @@ class EngineeringValidator:
             raise ValueError(f"Unsupported design code: {code}")
         
         return code.upper()
+
+
+
+# Backward compatibility aliases for existing code
+class NodeValidator:
+    """Validator for node operations"""
+    
+    @staticmethod
+    def validate_coordinates(x: float, y: float, z: float) -> tuple:
+        """Validate node coordinates - coordinates can be zero or negative"""
+        try:
+            x = float(x)
+            y = float(y)
+            z = float(z)
+            
+            # Check for valid finite numbers
+            if not all((-1e308 < coord < 1e308) for coord in [x, y, z]):
+                raise ValueError("Coordinate values out of valid range")
+            
+            # Check for NaN or infinity
+            if not all(coord == coord for coord in [x, y, z]):  # NaN check
+                raise ValueError("Coordinate values cannot be NaN")
+                
+            return (True, None)
+        except (ValueError, TypeError) as e:
+            return (False, str(e))
+    
+    @staticmethod
+    def check_duplicate(x: float, y: float, z: float, existing_nodes: list, tolerance: float = 1e-6) -> tuple:
+        """Check for duplicate nodes"""
+        for node in existing_nodes:
+            dx = abs(node.x - x)
+            dy = abs(node.y - y)
+            dz = abs(node.z - z)
+            if dx < tolerance and dy < tolerance and dz < tolerance:
+                return (True, f"Duplicate node at ({x}, {y}, {z})")
+        return (False, None)
+
+
+class GeometryValidator:
+    """Validator for geometry operations"""
+    
+    @staticmethod
+    def validate_element_length(length: float) -> float:
+        """Validate element length"""
+        return EngineeringValidator.validate_dimension(length, 'length')
+    
+    @staticmethod
+    def validate_element_connectivity(node_i: int, node_j: int) -> tuple:
+        """Validate element connectivity"""
+        if node_i == node_j:
+            raise ValueError("Element cannot connect a node to itself")
+        node_i = EngineeringValidator.validate_node_id(node_i)
+        node_j = EngineeringValidator.validate_node_id(node_j)
+        return (node_i, node_j)
+
+
+class AnalysisValidator:
+    """Validator for analysis operations"""
+    
+    @staticmethod
+    def validate_analysis_type(analysis_type: str) -> str:
+        """Validate analysis type"""
+        allowed_types = ['static', 'modal', 'dynamic', 'buckling', 'nonlinear']
+        analysis_type = SecurityValidator.sanitize_string(analysis_type, max_length=50).lower()
+        if analysis_type not in allowed_types:
+            raise ValueError(f"Invalid analysis type. Allowed: {allowed_types}")
+        return analysis_type
+
+
+class MaterialValidator:
+    """Validator for material properties"""
+    
+    @staticmethod
+    def validate_material_properties(properties: dict) -> dict:
+        """Validate material properties"""
+        validated = {}
+        if 'E' in properties:
+            validated['E'] = EngineeringValidator.validate_material_property(properties['E'], 'E')
+        if 'G' in properties:
+            validated['G'] = EngineeringValidator.validate_material_property(properties['G'], 'G')
+        if 'fy' in properties:
+            validated['fy'] = EngineeringValidator.validate_material_property(properties['fy'], 'fy')
+        if 'fu' in properties:
+            validated['fu'] = EngineeringValidator.validate_material_property(properties['fu'], 'fu')
+        if 'fck' in properties:
+            validated['fck'] = EngineeringValidator.validate_material_property(properties['fck'], 'fck')
+        if 'density' in properties:
+            validated['density'] = EngineeringValidator.validate_material_property(properties['density'], 'density')
+        if 'poisson' in properties:
+            validated['poisson'] = EngineeringValidator.validate_material_property(properties['poisson'], 'poisson')
+        return validated
+
+
+class LoadValidator:
+    """Validator for load operations"""
+    
+    @staticmethod
+    def validate_load_value(value: float, load_type: str = 'force') -> float:
+        """Validate load value"""
+        return EngineeringValidator.validate_load(value, load_type)
+    
+    @staticmethod
+    def validate_load_type(load_type: str) -> str:
+        """Validate load type"""
+        allowed_types = ['point', 'distributed', 'moment', 'temperature', 'settlement']
+        load_type = SecurityValidator.sanitize_string(load_type, max_length=50).lower()
+        if load_type not in allowed_types:
+            raise ValueError(f"Invalid load type. Allowed: {allowed_types}")
+        return load_type
+
+
+class SectionValidator:
+    """Validator for section properties"""
+    
+    @staticmethod
+    def validate_section_properties(properties: dict) -> dict:
+        """Validate section properties"""
+        validated = {}
+        if 'A' in properties:
+            validated['A'] = EngineeringValidator.validate_section_property(properties['A'], 'A')
+        if 'Ix' in properties:
+            validated['Ix'] = EngineeringValidator.validate_section_property(properties['Ix'], 'Ix')
+        if 'Iy' in properties:
+            validated['Iy'] = EngineeringValidator.validate_section_property(properties['Iy'], 'Iy')
+        if 'Iz' in properties:
+            validated['Iz'] = EngineeringValidator.validate_section_property(properties['Iz'], 'Iz')
+        if 'J' in properties:
+            validated['J'] = EngineeringValidator.validate_section_property(properties['J'], 'J')
+        return validated

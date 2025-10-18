@@ -32,7 +32,7 @@ export function KeyboardShortcutsDialog({ open, onClose }: KeyboardShortcutsDial
   ];
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Keyboard Shortcuts</DialogTitle>

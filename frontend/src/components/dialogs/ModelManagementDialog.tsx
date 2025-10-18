@@ -12,7 +12,7 @@ interface ModelManagementDialogProps {
 
 export function ModelManagementDialog({ open, onClose }: ModelManagementDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Model Management</DialogTitle>

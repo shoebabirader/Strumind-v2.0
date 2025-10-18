@@ -31,7 +31,7 @@ export function SteelDesignDialog({ open, onClose }: SteelDesignDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>Steel Design (IS 800:2007)</DialogTitle>

@@ -16,7 +16,7 @@ export function AdvancedElementsDialog({ open, onClose }: AdvancedElementsDialog
   const [elementType, setElementType] = useState('shell');
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Advanced Elements</DialogTitle>

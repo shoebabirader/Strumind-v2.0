@@ -38,17 +38,22 @@ class DisclaimerAcceptance(BaseModel):
 
 
 # Mock user database (replace with real database in production)
-fake_users_db = {
-    "demo": {
-        "id": 1,
-        "username": "demo",
-        "email": "demo@strumind.com",
-        "full_name": "Demo User",
-        "hashed_password": get_password_hash("demo123"),
-        "is_active": True,
-        "accepted_disclaimer": True
-    }
-}
+# Initialize with lazy password hashing to avoid bcrypt issues at import time
+fake_users_db = {}
+
+def get_demo_user():
+    """Get or create demo user with lazy password hashing"""
+    if "demo" not in fake_users_db:
+        fake_users_db["demo"] = {
+            "id": 1,
+            "username": "demo",
+            "email": "demo@strumind.com",
+            "full_name": "Demo User",
+            "hashed_password": get_password_hash("demo123"),
+            "is_active": True,
+            "accepted_disclaimer": True
+        }
+    return fake_users_db["demo"]
 
 
 @router.get("/disclaimer", response_model=EngineeringDisclaimer)
@@ -94,10 +99,10 @@ async def accept_disclaimer(
     }
 
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register")
 async def register(user: UserCreate):
     """
-    Register a new user
+    Register a new user and return access token
     """
     # Check if user exists
     if user.username in fake_users_db:
@@ -121,14 +126,26 @@ async def register(user: UserCreate):
     
     fake_users_db[user.username] = new_user
     
-    return UserResponse(
-        id=new_user["id"],
-        username=new_user["username"],
-        email=new_user["email"],
-        full_name=new_user["full_name"],
-        is_active=new_user["is_active"],
-        accepted_disclaimer=new_user["accepted_disclaimer"]
+    # Create access token for the new user
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": new_user["username"], "user_id": new_user["id"]},
+        expires_delta=access_token_expires
     )
+    
+    # Return both user data and token
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": new_user["id"],
+            "username": new_user["username"],
+            "email": new_user["email"],
+            "full_name": new_user["full_name"],
+            "is_active": new_user["is_active"],
+            "accepted_disclaimer": new_user["accepted_disclaimer"]
+        }
+    }
 
 
 @router.post("/login", response_model=Token)
@@ -136,7 +153,8 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """
     Login to get access token
     """
-    # Authenticate user
+    # Authenticate user (initialize demo user if needed)
+    get_demo_user()  # Ensure demo user exists
     user = fake_users_db.get(form_data.username)
     if not user or not verify_password(form_data.password, user["hashed_password"]):
         raise HTTPException(

@@ -15,7 +15,7 @@ export function LoadCombinationsDialog({ open, onClose }: LoadCombinationsDialog
   const [code, setCode] = useState('IS456');
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Load Combinations</DialogTitle>

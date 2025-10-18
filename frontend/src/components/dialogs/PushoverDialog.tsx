@@ -93,7 +93,7 @@ export function PushoverDialog({ open, onClose }: PushoverDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Pushover Analysis (Nonlinear Static)</DialogTitle>

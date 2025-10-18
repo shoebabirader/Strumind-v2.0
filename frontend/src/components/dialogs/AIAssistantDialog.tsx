@@ -44,7 +44,7 @@ export function AIAssistantDialog({ open, onClose }: AIAssistantDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="sm:max-w-[700px] h-[600px] flex flex-col">
         <DialogHeader>
           <div className="flex items-center justify-between">
