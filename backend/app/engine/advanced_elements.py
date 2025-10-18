@@ -176,16 +176,135 @@ class SolidElement:
         return D
     
     def _shape_derivatives(self, xi: float, eta: float, zeta: float) -> Tuple[np.ndarray, np.ndarray]:
-        """Calculate shape function derivatives and Jacobian"""
-        # Simplified - return identity for now
-        dN = np.eye(8)
-        J = np.eye(3)
-        return dN, J
+        """
+        Calculate shape function derivatives and Jacobian for 8-node hexahedral element
+        
+        Node numbering (standard):
+        Bottom face (zeta = -1): 1,2,3,4
+        Top face (zeta = +1): 5,6,7,8
+        
+        Args:
+            xi, eta, zeta: Natural coordinates (-1 to +1)
+            
+        Returns:
+            dN_dxyz: Shape function derivatives w.r.t. global coordinates (3x8)
+            J: Jacobian matrix (3x3)
+        """
+        # Shape function derivatives w.r.t. natural coordinates
+        # dN/dxi, dN/deta, dN/dzeta for each of 8 nodes
+        dN_dxi = np.array([
+            -(1-eta)*(1-zeta)/8,  # Node 1
+             (1-eta)*(1-zeta)/8,  # Node 2
+             (1+eta)*(1-zeta)/8,  # Node 3
+            -(1+eta)*(1-zeta)/8,  # Node 4
+            -(1-eta)*(1+zeta)/8,  # Node 5
+             (1-eta)*(1+zeta)/8,  # Node 6
+             (1+eta)*(1+zeta)/8,  # Node 7
+            -(1+eta)*(1+zeta)/8   # Node 8
+        ])
+        
+        dN_deta = np.array([
+            -(1-xi)*(1-zeta)/8,   # Node 1
+            -(1+xi)*(1-zeta)/8,   # Node 2
+             (1+xi)*(1-zeta)/8,   # Node 3
+             (1-xi)*(1-zeta)/8,   # Node 4
+            -(1-xi)*(1+zeta)/8,   # Node 5
+            -(1+xi)*(1+zeta)/8,   # Node 6
+             (1+xi)*(1+zeta)/8,   # Node 7
+             (1-xi)*(1+zeta)/8    # Node 8
+        ])
+        
+        dN_dzeta = np.array([
+            -(1-xi)*(1-eta)/8,    # Node 1
+            -(1+xi)*(1-eta)/8,    # Node 2
+            -(1+xi)*(1+eta)/8,    # Node 3
+            -(1-xi)*(1+eta)/8,    # Node 4
+             (1-xi)*(1-eta)/8,    # Node 5
+             (1+xi)*(1-eta)/8,    # Node 6
+             (1+xi)*(1+eta)/8,    # Node 7
+             (1-xi)*(1+eta)/8     # Node 8
+        ])
+        
+        # Assemble derivatives matrix (3x8)
+        dN_dnat = np.array([dN_dxi, dN_deta, dN_dzeta])
+        
+        # Get nodal coordinates
+        coords = np.zeros((8, 3))
+        for i, node in enumerate(self.nodes):
+            coords[i] = [node.x, node.y, node.z]
+        
+        # Calculate Jacobian matrix: J = dN/dnat * coords
+        # J[i,j] = sum over nodes of (dN_i/dnat_j * coord_i)
+        J = dN_dnat @ coords  # (3x8) @ (8x3) = (3x3)
+        
+        # Invert Jacobian
+        try:
+            J_inv = np.linalg.inv(J)
+        except np.linalg.LinAlgError:
+            logger.warning("Singular Jacobian detected, using pseudo-inverse")
+            J_inv = np.linalg.pinv(J)
+        
+        # Calculate derivatives w.r.t. global coordinates
+        # dN/dx = J^-1 * dN/dnat
+        dN_dxyz = J_inv @ dN_dnat  # (3x3) @ (3x8) = (3x8)
+        
+        return dN_dxyz, J
     
-    def _b_matrix(self, dN: np.ndarray) -> np.ndarray:
-        """Strain-displacement matrix"""
+    def _b_matrix(self, dN_dxyz: np.ndarray) -> np.ndarray:
+        """
+        Calculate strain-displacement matrix (B-matrix) for 8-node hexahedral element
+        
+        Relates nodal displacements to strains:
+        {strain} = [B] {displacement}
+        
+        where:
+        {strain} = {εxx, εyy, εzz, γxy, γyz, γzx}^T  (6x1)
+        {displacement} = {u1,v1,w1, u2,v2,w2, ..., u8,v8,w8}^T  (24x1)
+        
+        Args:
+            dN_dxyz: Shape function derivatives w.r.t. global coords (3x8)
+                     [dN/dx; dN/dy; dN/dz]
+        
+        Returns:
+            B: Strain-displacement matrix (6x24)
+        """
         B = np.zeros((6, 24))
-        # Simplified
+        
+        # Extract derivatives for convenience
+        dN_dx = dN_dxyz[0, :]  # (8,)
+        dN_dy = dN_dxyz[1, :]  # (8,)
+        dN_dz = dN_dxyz[2, :]  # (8,)
+        
+        # Fill B-matrix for each node
+        for i in range(8):
+            # Columns for node i: 3*i, 3*i+1, 3*i+2 (u, v, w)
+            col_u = 3 * i
+            col_v = 3 * i + 1
+            col_w = 3 * i + 2
+            
+            # Normal strains
+            # εxx = du/dx
+            B[0, col_u] = dN_dx[i]
+            
+            # εyy = dv/dy
+            B[1, col_v] = dN_dy[i]
+            
+            # εzz = dw/dz
+            B[2, col_w] = dN_dz[i]
+            
+            # Shear strains (engineering shear strain = 2 * tensor shear strain)
+            # γxy = du/dy + dv/dx
+            B[3, col_u] = dN_dy[i]
+            B[3, col_v] = dN_dx[i]
+            
+            # γyz = dv/dz + dw/dy
+            B[4, col_v] = dN_dz[i]
+            B[4, col_w] = dN_dy[i]
+            
+            # γzx = dw/dx + du/dz
+            B[5, col_w] = dN_dx[i]
+            B[5, col_u] = dN_dz[i]
+        
         return B
 
 
