@@ -59,8 +59,21 @@ class Eurocode2(object):
             }
     
     def shear_design(self, V: float, b: float, d: float,
-                    fck: float, As: float) -> Dict:
-        """Shear design per Eurocode 2"""
+                    fck: float, As: float, fyk: float) -> Dict:
+        """
+        Shear design per Eurocode 2
+        
+        Args:
+            V: Design shear force (kN)
+            b: Width of section (mm)
+            d: Effective depth (mm)
+            fck: Characteristic concrete strength (MPa)
+            As: Area of tension steel (mm²)
+            fyk: Characteristic steel strength (MPa)
+        
+        Returns:
+            Dict with shear design results
+        """
         # Concrete shear resistance
         rho_l = min(As / (b * d), 0.02)
         k = min(1 + np.sqrt(200 / d), 2.0)
