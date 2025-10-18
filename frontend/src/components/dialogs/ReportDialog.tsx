@@ -1,151 +1,126 @@
-import React, { useState } from 'react'
-import { X, FileText, Download } from 'lucide-react'
+'use client';
+
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { reportingApi } from '@/lib/api';
+import { useModelStore } from '@/stores/modelStore';
 
 interface ReportDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onGenerate: (data: any) => void
+  open: boolean;
+  onClose: () => void;
 }
 
-export default function ReportDialog({ isOpen, onClose, onGenerate }: ReportDialogProps) {
-  const [reportType, setReportType] = useState<'analysis' | 'calculation' | 'design'>('analysis')
-  const [format, setFormat] = useState<'pdf' | 'excel' | 'word'>('pdf')
-  const [options, setOptions] = useState({
-    includeGraphs: true,
-    includeDetailedResults: true,
-    includeDesignChecks: true,
-    includeMaterialTakeoff: false,
-    includeDrawings: false
-  })
+export function ReportDialog({ open, onClose }: ReportDialogProps) {
+  const { currentProject } = useModelStore();
+  const [loading, setLoading] = useState(false);
+  const [format, setFormat] = useState<'pdf' | 'docx' | 'html'>('pdf');
+  const [includeAnalysis, setIncludeAnalysis] = useState(true);
+  const [includeDesign, setIncludeDesign] = useState(true);
+  const [includeDrawings, setIncludeDrawings] = useState(false);
 
-  if (!isOpen) return null
+  const handleGenerate = async () => {
+    if (!currentProject) return;
 
-  const handleGenerate = () => {
-    onGenerate({
-      type: reportType,
-      format,
-      options,
-      timestamp: new Date().toISOString()
-    })
-    onClose()
-  }
+    setLoading(true);
+    try {
+      await reportingApi.generateAnalysisReport({
+        project_id: currentProject.id,
+        analysis_data: {},
+        design_data: {},
+        format,
+      });
+      onClose();
+    } catch (error) {
+      console.error('Report generation failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl">
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
-          <div className="flex items-center space-x-2">
-            <FileText className="w-5 h-5 text-green-400" />
-            <h2 className="text-lg font-semibold">Generate Report</h2>
-          </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Generate Report</DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Report Type</label>
-              <select
-                value={reportType}
-                onChange={(e) => setReportType(e.target.value as any)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded"
-              >
-                <option value="analysis">Analysis Report</option>
-                <option value="calculation">Calculation Sheet</option>
-                <option value="design">Design Report</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Export Format</label>
-              <select
-                value={format}
-                onChange={(e) => setFormat(e.target.value as any)}
-                className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded"
-              >
-                <option value="pdf">PDF</option>
-                <option value="excel">Excel</option>
-                <option value="word">Word</option>
-              </select>
-            </div>
-          </div>
-
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-3">Report Contents</label>
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={options.includeGraphs}
-                  onChange={(e) => setOptions({ ...options, includeGraphs: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Include Graphs and Charts</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={options.includeDetailedResults}
-                  onChange={(e) => setOptions({ ...options, includeDetailedResults: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Include Detailed Results</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={options.includeDesignChecks}
-                  onChange={(e) => setOptions({ ...options, includeDesignChecks: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Include Design Checks</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={options.includeMaterialTakeoff}
-                  onChange={(e) => setOptions({ ...options, includeMaterialTakeoff: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Include Material Takeoff</span>
-              </label>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={options.includeDrawings}
-                  onChange={(e) => setOptions({ ...options, includeDrawings: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Include Drawings</span>
-              </label>
+            <Label>Report Format</Label>
+            <Select value={format} onValueChange={(v: any) => setFormat(v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pdf">PDF Document</SelectItem>
+                <SelectItem value="docx">Word Document</SelectItem>
+                <SelectItem value="html">HTML Report</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-3">
+            <Label>Include Sections</Label>
+            
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="analysis"
+                checked={includeAnalysis}
+                onCheckedChange={(checked) => setIncludeAnalysis(checked as boolean)}
+              />
+              <Label htmlFor="analysis" className="font-normal">
+                Analysis Results
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="design"
+                checked={includeDesign}
+                onCheckedChange={(checked) => setIncludeDesign(checked as boolean)}
+              />
+              <Label htmlFor="design" className="font-normal">
+                Design Calculations
+              </Label>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="drawings"
+                checked={includeDrawings}
+                onCheckedChange={(checked) => setIncludeDrawings(checked as boolean)}
+              />
+              <Label htmlFor="drawings" className="font-normal">
+                Drawings & Detailing
+              </Label>
             </div>
           </div>
 
-          <div className="bg-blue-900 bg-opacity-20 border border-blue-700 rounded p-4">
-            <p className="text-sm text-blue-300">
-              The report will be generated based on the current analysis results and model data.
-            </p>
-          </div>
-
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-700">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleGenerate}
-              className="px-4 py-2 bg-green-600 hover:bg-green-700 rounded flex items-center space-x-2"
-            >
-              <Download className="w-4 h-4" />
-              <span>Generate Report</span>
-            </button>
+          <div className="p-4 bg-gray-50 rounded-lg text-sm text-gray-600">
+            <p className="font-medium mb-2">Report will include:</p>
+            <ul className="space-y-1">
+              <li>• Project information</li>
+              <li>• Model geometry</li>
+              {includeAnalysis && <li>• Analysis results & diagrams</li>}
+              {includeDesign && <li>• Design calculations & checks</li>}
+              {includeDrawings && <li>• Reinforcement detailing</li>}
+            </ul>
           </div>
         </div>
-      </div>
-    </div>
-  )
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleGenerate} disabled={loading}>
+            {loading ? 'Generating...' : 'Generate Report'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Optional
 import numpy as np
-from app.engine.advanced_analysis import TimeHistoryAnalysis, BucklingAnalysis, LoadCombinations, EnvelopeResults
+from app.engine.advanced_analysis import PDeltaAnalysis, BucklingAnalysis, ResultsPostProcessor
+from app.engine.dynamic_analysis import TimeHistoryAnalysis, ResponseSpectrumAnalysis
+from app.engine.load_combinations import LoadCombinationGenerator
 from app.engine.results_processor import ResultsProcessor
 from app.database.steel_sections import SteelSectionDatabase
 from app.engine.slab_design import SlabDesign

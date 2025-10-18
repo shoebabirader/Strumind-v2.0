@@ -1,247 +1,111 @@
-import React, { useState } from 'react'
-import { X, Play, Settings } from 'lucide-react'
-import { analysisAPI } from '@/lib/api'
-import { useModel } from '@/contexts/ModelContext'
+'use client';
+
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAnalysis } from '@/hooks/useAnalysis';
+import { useModelStore } from '@/stores/modelStore';
 
 interface AnalysisDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onRunAnalysis: (config: any) => void
+  open: boolean;
+  onClose: () => void;
 }
 
-export default function AnalysisDialog({ isOpen, onClose, onRunAnalysis }: AnalysisDialogProps) {
-  const { nodes, elements, materials } = useModel()
-  const [config, setConfig] = useState({
-    analysisType: 'static',
-    solver: 'direct',
-    loadCombinations: ['1.2DL + 1.6LL'],
-    includeGeometricNonlinearity: false,
-    includePDelta: false,
-    convergenceTolerance: 0.001,
-    maxIterations: 100,
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+export function AnalysisDialog({ open, onClose }: AnalysisDialogProps) {
+  const { currentProject } = useModelStore();
+  const { runAnalysis, isLoading } = useAnalysis();
+  const [analysisType, setAnalysisType] = useState<'linear' | 'modal' | 'time_history' | 'pushover' | 'buckling' | 'pdelta'>('linear');
 
-  if (!isOpen) return null
+  const handleRunAnalysis = async () => {
+    if (!currentProject) return;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    
     try {
-      // Prepare model data for backend
-      const modelData = {
-        nodes: nodes.map(n => ({
-          id: n.id,
-          coordinates: [n.x, n.y, n.z],
-          restraints: n.restraints
-        })),
-        elements: elements.map(e => ({
-          id: e.id,
-          node_i: e.nodeI,
-          node_j: e.nodeJ,
-          type: e.type,
-          material_id: e.materialId,
-          section: {
-            type: e.sectionType,
-            width: e.width,
-            height: e.height
-          }
-        })),
-        materials: materials.map(m => ({
-          id: m.id,
-          name: m.name,
-          E: m.E,
-          nu: m.nu,
-          density: m.density
-        })),
-        analysis_config: config
-      }
-      
-      // Call backend API
-      const response = await analysisAPI.static(modelData)
-      
-      // Pass results to parent
-      onRunAnalysis({
-        ...config,
-        results: response.data
-      })
-      
-      onClose()
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.detail 
-        ? (typeof err.response.data.detail === 'string' 
-          ? err.response.data.detail 
-          : JSON.stringify(err.response.data.detail))
-        : 'Failed to run analysis'
-      setError(errorMsg)
-    } finally {
-      setLoading(false)
+      await runAnalysis({
+        project_id: currentProject.id,
+        analysis_type: analysisType,
+      });
+      onClose();
+    } catch (error) {
+      console.error('Analysis failed:', error);
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="panel w-full max-w-2xl">
-        <div className="panel-header">
-          <span><Settings className="w-4 h-4 inline mr-2" />Analysis Settings</span>
-          <button onClick={onClose} className="toolbar-button">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Run Analysis</DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Analysis Type */}
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Analysis Type</label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: 'static', label: 'Static Linear', desc: 'Standard linear analysis' },
-                { value: 'dynamic', label: 'Dynamic', desc: 'Time history or modal' },
-                { value: 'buckling', label: 'Buckling', desc: 'Eigenvalue buckling' },
-                { value: 'nonlinear', label: 'Nonlinear', desc: 'Geometric nonlinearity' },
-              ].map((type) => (
-                <label
-                  key={type.value}
-                  className={`panel p-3 cursor-pointer transition-all ${
-                    config.analysisType === type.value ? 'border-blue-500' : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="analysisType"
-                    value={type.value}
-                    checked={config.analysisType === type.value}
-                    onChange={(e) => setConfig({ ...config, analysisType: e.target.value })}
-                    className="mr-2"
-                  />
-                  <div>
-                    <div className="font-medium">{type.label}</div>
-                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{type.desc}</div>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
+        <Tabs defaultValue="basic" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="basic">Basic</TabsTrigger>
+            <TabsTrigger value="dynamic">Dynamic</TabsTrigger>
+            <TabsTrigger value="nonlinear">Nonlinear</TabsTrigger>
+          </TabsList>
 
-          {/* Solver */}
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Solver Method</label>
-            <select
-              value={config.solver}
-              onChange={(e) => setConfig({ ...config, solver: e.target.value })}
-              className="w-full"
-            >
-              <option value="direct">Direct (Skyline)</option>
-              <option value="iterative">Iterative (PCG)</option>
-              <option value="sparse">Sparse (PARDISO)</option>
-            </select>
-          </div>
-
-          {/* Load Combinations */}
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Load Combinations</label>
-            <div className="space-y-2">
-              {[
-                '1.4DL',
-                '1.2DL + 1.6LL',
-                '1.2DL + 1.0LL + 1.0WL',
-                '1.2DL + 1.0LL + 1.0EQ',
-                '0.9DL + 1.0WL',
-              ].map((combo) => (
-                <label key={combo} className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={config.loadCombinations.includes(combo)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setConfig({ ...config, loadCombinations: [...config.loadCombinations, combo] })
-                      } else {
-                        setConfig({ ...config, loadCombinations: config.loadCombinations.filter((c) => c !== combo) })
-                      }
-                    }}
-                    className="rounded"
-                  />
-                  <span className="text-sm">{combo}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          {/* Advanced Options */}
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Advanced Options</label>
-            <div className="space-y-2">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={config.includeGeometricNonlinearity}
-                  onChange={(e) => setConfig({ ...config, includeGeometricNonlinearity: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Include Geometric Nonlinearity</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  checked={config.includePDelta}
-                  onChange={(e) => setConfig({ ...config, includePDelta: e.target.checked })}
-                  className="rounded"
-                />
-                <span className="text-sm">Include P-Delta Effects</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Convergence */}
-          <div className="grid grid-cols-2 gap-4">
+          <TabsContent value="basic" className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Convergence Tolerance</label>
-              <input
-                type="number"
-                step="0.0001"
-                value={config.convergenceTolerance}
-                onChange={(e) => setConfig({ ...config, convergenceTolerance: parseFloat(e.target.value) })}
-              />
+              <Label>Analysis Type</Label>
+              <Select value={analysisType} onValueChange={(v) => setAnalysisType(v as typeof analysisType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="linear">Linear Static</SelectItem>
+                  <SelectItem value="modal">Modal Analysis</SelectItem>
+                  <SelectItem value="buckling">Buckling Analysis</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </TabsContent>
+
+          <TabsContent value="dynamic" className="space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Max Iterations</label>
-              <input
-                type="number"
-                value={config.maxIterations}
-                onChange={(e) => setConfig({ ...config, maxIterations: parseInt(e.target.value) })}
-              />
+              <Label>Dynamic Analysis Type</Label>
+              <Select value={analysisType} onValueChange={(v) => setAnalysisType(v as typeof analysisType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="time_history">Time History</SelectItem>
+                  <SelectItem value="response_spectrum">Response Spectrum</SelectItem>
+                  <SelectItem value="frequency_response">Frequency Response</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
+          </TabsContent>
 
-          {error && (
-            <div className="p-3 rounded" style={{ background: 'var(--accent-red)', color: 'white' }}>
-              {error}
+          <TabsContent value="nonlinear" className="space-y-4">
+            <div>
+              <Label>Nonlinear Analysis Type</Label>
+              <Select value={analysisType} onValueChange={(v) => setAnalysisType(v as typeof analysisType)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pushover">Pushover Analysis</SelectItem>
+                  <SelectItem value="pdelta">P-Delta Analysis</SelectItem>
+                  <SelectItem value="geometric_nonlinear">Geometric Nonlinear</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
+          </TabsContent>
+        </Tabs>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <button type="button" onClick={onClose} className="btn-secondary" disabled={loading}>
-              Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Running Analysis...
-                </>
-              ) : (
-                <>
-                  <Play className="w-4 h-4 mr-2" />
-                  Run Analysis
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleRunAnalysis} disabled={isLoading}>
+            {isLoading ? 'Running...' : 'Run Analysis'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

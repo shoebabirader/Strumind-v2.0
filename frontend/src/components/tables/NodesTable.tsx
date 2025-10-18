@@ -1,91 +1,86 @@
-import React from 'react'
-import { Edit2, Trash2, MapPin } from 'lucide-react'
-import { useModel } from '@/contexts/ModelContext'
+'use client';
 
-interface NodesTableProps {
-  onEdit?: (node: any) => void
-}
+import { useNodes } from '@/hooks/useNodes';
+import { useModelStore } from '@/stores/modelStore';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Pencil, Trash2 } from 'lucide-react';
 
-export default function NodesTable({ onEdit }: NodesTableProps) {
-  const { nodes } = useModel()
+export function NodesTable() {
+  const { currentProject } = useModelStore();
+  const { nodes, deleteNode } = useNodes(currentProject?.id);
+
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to delete this node?')) {
+      await deleteNode(id);
+    }
+  };
 
   return (
-    <div className="panel flex-1 flex flex-col">
-      <div className="panel-header">
-        <span><MapPin className="w-4 h-4 inline mr-2" />Nodes ({nodes.length})</span>
-      </div>
-      
-      <div className="flex-1 overflow-auto">
-        <table className="w-full">
-          <thead style={{ background: 'var(--bg-tertiary)', position: 'sticky', top: 0 }}>
-            <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>ID</th>
-              <th className="px-4 py-2 text-right text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>X (m)</th>
-              <th className="px-4 py-2 text-right text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Y (m)</th>
-              <th className="px-4 py-2 text-right text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Z (m)</th>
-              <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Restraints</th>
-              <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {nodes.map((node, idx) => (
-              <tr 
-                key={node.id}
-                className="border-t hover:bg-opacity-50 transition-colors"
-                style={{ 
-                  borderColor: 'var(--border-primary)',
-                  background: idx % 2 === 0 ? 'transparent' : 'var(--bg-tertiary)'
-                }}
-              >
-                <td className="px-4 py-2 text-sm font-medium">{node.id}</td>
-                <td className="px-4 py-2 text-sm text-right">{node.x.toFixed(3)}</td>
-                <td className="px-4 py-2 text-sm text-right">{node.y.toFixed(3)}</td>
-                <td className="px-4 py-2 text-sm text-right">{node.z.toFixed(3)}</td>
-                <td className="px-4 py-2 text-center">
-                  <div className="flex justify-center space-x-1">
-                    {node.restraints?.map((r: boolean, i: number) => (
-                      <span
-                        key={i}
-                        className="w-5 h-5 rounded text-xs flex items-center justify-center"
-                        style={{
-                          background: r ? 'var(--accent-red)' : 'var(--bg-tertiary)',
-                          color: r ? 'white' : 'var(--text-tertiary)'
-                        }}
-                        title={['UX', 'UY', 'UZ', 'RX', 'RY', 'RZ'][i]}
-                      >
-                        {['UX', 'UY', 'UZ', 'RX', 'RY', 'RZ'][i][1]}
-                      </span>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-4 py-2">
-                  <div className="flex justify-center space-x-2">
-                    <button
-                      onClick={() => onEdit?.(node)}
-                      className="toolbar-button"
-                      title="Edit"
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>X</TableHead>
+            <TableHead>Y</TableHead>
+            <TableHead>Z</TableHead>
+            <TableHead>Restraints</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {nodes.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center text-gray-500">
+                No nodes created yet
+              </TableCell>
+            </TableRow>
+          ) : (
+            nodes.map((node) => (
+              <TableRow key={node.id}>
+                <TableCell className="font-medium">{node.id}</TableCell>
+                <TableCell>{node.x.toFixed(2)}</TableCell>
+                <TableCell>{node.y.toFixed(2)}</TableCell>
+                <TableCell>{node.z.toFixed(2)}</TableCell>
+                <TableCell>
+                  {node.restraints ? (
+                    <span className="text-xs">
+                      {Object.entries(node.restraints)
+                        .filter(([_, v]) => v)
+                        .map(([k]) => k.toUpperCase())
+                        .join(', ') || 'Free'}
+                    </span>
+                  ) : (
+                    'Free'
+                  )}
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button size="sm" variant="ghost">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(node.id)}
                     >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      className="toolbar-button"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        {nodes.length === 0 && (
-          <div className="flex items-center justify-center h-32" style={{ color: 'var(--text-tertiary)' }}>
-            No nodes defined. Click "Add Node" to create one.
-          </div>
-        )}
-      </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
-  )
+  );
 }

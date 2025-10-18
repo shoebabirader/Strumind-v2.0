@@ -1,211 +1,155 @@
-import React, { useState } from 'react'
-import { X, Plus, Search } from 'lucide-react'
-import { useModel } from '@/contexts/ModelContext'
+'use client';
+
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useMaterials } from '@/hooks/useMaterials';
+import { useModelStore } from '@/stores/modelStore';
 
 interface MaterialDialogProps {
-  isOpen: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
 }
 
-const PREDEFINED_MATERIALS = [
-  { id: 'concrete_m20', name: 'Concrete M20', E: 22000, nu: 0.2, density: 2500, type: 'concrete', fy: 20 },
-  { id: 'concrete_m25', name: 'Concrete M25', E: 25000, nu: 0.2, density: 2500, type: 'concrete', fy: 25 },
-  { id: 'concrete_m30', name: 'Concrete M30', E: 27000, nu: 0.2, density: 2500, type: 'concrete', fy: 30 },
-  { id: 'steel_fe415', name: 'Steel Fe415', E: 200000, nu: 0.3, density: 7850, type: 'steel', fy: 415 },
-  { id: 'steel_fe500', name: 'Steel Fe500', E: 200000, nu: 0.3, density: 7850, type: 'steel', fy: 500 },
-  { id: 'steel_a36', name: 'Steel A36', E: 200000, nu: 0.3, density: 7850, type: 'steel', fy: 250 },
-  { id: 'aluminum_6061', name: 'Aluminum 6061', E: 70000, nu: 0.33, density: 2700, type: 'aluminum', fy: 276 },
-]
+export function MaterialDialog({ open, onClose }: MaterialDialogProps) {
+  const { currentProject } = useModelStore();
+  const { createMaterial, library } = useMaterials(currentProject?.id);
+  const [loading, setLoading] = useState(false);
+  const { register, handleSubmit, setValue, watch } = useForm({
+    defaultValues: {
+      name: '',
+      material_type: 'concrete',
+      elastic_modulus: 0,
+      poissons_ratio: 0.2,
+      density: 0,
+      yield_strength: 0,
+      ultimate_strength: 0,
+    },
+  });
 
-export default function MaterialDialog({ isOpen, onClose }: MaterialDialogProps) {
-  const { materials, addMaterial } = useModel()
-  const [searchTerm, setSearchTerm] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
-  const [newMaterial, setNewMaterial] = useState({
-    id: '',
-    name: '',
-    E: 0,
-    nu: 0,
-    density: 0,
-    fy: 0,
-    type: 'concrete'
-  })
-
-  if (!isOpen) return null
-
-  const filteredMaterials = PREDEFINED_MATERIALS.filter(
-    (mat) =>
-      mat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mat.type.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-
-  const handleAddMaterial = () => {
-    if (newMaterial.id && newMaterial.name) {
-      addMaterial(newMaterial)
-      setShowAddForm(false)
-      setNewMaterial({ id: '', name: '', E: 0, nu: 0, density: 0, fy: 0, type: 'concrete' })
+  const onSubmit = async (data: any) => {
+    if (!currentProject) return;
+    
+    setLoading(true);
+    try {
+      await createMaterial({ ...data, project_id: currentProject.id });
+      onClose();
+    } catch (error) {
+      console.error('Failed to create material:', error);
+    } finally {
+      setLoading(false);
     }
-  }
-
-  const handleSelectMaterial = (material: any) => {
-    if (!materials.find((m) => m.id === material.id)) {
-      addMaterial(material)
-    }
-    onClose()
-  }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="panel w-full max-w-4xl max-h-[80vh] flex flex-col">
-        <div className="panel-header">
-          <span>Material Library</span>
-          <button onClick={onClose} className="toolbar-button">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Material Properties</DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 space-y-4 flex-1 overflow-auto">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
-            <input
-              type="text"
-              placeholder="Search materials..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+        <Tabs defaultValue="custom">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="library">Library</TabsTrigger>
+            <TabsTrigger value="custom">Custom</TabsTrigger>
+          </TabsList>
 
-          {/* Add Custom Material */}
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="w-full p-3 border-2 border-dashed rounded hover:border-blue-500 transition-colors flex items-center justify-center"
-            style={{ borderColor: 'var(--border-primary)' }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Add Custom Material
-          </button>
-
-          {/* Add Material Form */}
-          {showAddForm && (
-            <div className="panel p-4 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="Material ID"
-                  value={newMaterial.id}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, id: e.target.value })}
-                />
-                <input
-                  type="text"
-                  placeholder="Material Name"
-                  value={newMaterial.name}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <select
-                  value={newMaterial.type}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, type: e.target.value })}
-                >
-                  <option value="concrete">Concrete</option>
-                  <option value="steel">Steel</option>
-                  <option value="aluminum">Aluminum</option>
-                  <option value="timber">Timber</option>
-                </select>
-                <input
-                  type="number"
-                  placeholder="Yield Strength (MPa)"
-                  value={newMaterial.fy || ''}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, fy: parseFloat(e.target.value) })}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <input
-                  type="number"
-                  placeholder="E (MPa)"
-                  value={newMaterial.E || ''}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, E: parseFloat(e.target.value) })}
-                />
-                <input
-                  type="number"
-                  placeholder="Poisson's Ratio"
-                  step="0.01"
-                  value={newMaterial.nu || ''}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, nu: parseFloat(e.target.value) })}
-                />
-                <input
-                  type="number"
-                  placeholder="Density (kg/m³)"
-                  value={newMaterial.density || ''}
-                  onChange={(e) => setNewMaterial({ ...newMaterial, density: parseFloat(e.target.value) })}
-                />
-              </div>
-              <button onClick={handleAddMaterial} className="btn-primary w-full">
-                Add Material
-              </button>
-            </div>
-          )}
-
-          {/* Materials Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredMaterials.map((material) => (
-              <div
-                key={material.id}
-                onClick={() => handleSelectMaterial(material)}
-                className="panel p-4 cursor-pointer transition-all hover:border-blue-500"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <h3 className="font-semibold">{material.name}</h3>
-                    <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>ID: {material.id}</p>
-                  </div>
-                  <span 
-                    className="px-2 py-1 text-xs rounded"
-                    style={{ 
-                      background: material.type === 'concrete' ? 'var(--accent-blue)' : 
-                                 material.type === 'steel' ? 'var(--accent-red)' : 'var(--accent-purple)',
-                      color: 'white'
-                    }}
-                  >
-                    {material.type}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div>
-                    <span style={{ color: 'var(--text-tertiary)' }}>E:</span> {material.E.toLocaleString()} MPa
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-tertiary)' }}>fy:</span> {material.fy} MPa
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-tertiary)' }}>ν:</span> {material.nu}
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-tertiary)' }}>ρ:</span> {material.density} kg/m³
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Current Materials */}
-          {materials.length > 0 && (
+          <TabsContent value="library" className="space-y-4">
             <div>
-              <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--text-secondary)' }}>Current Project Materials</h3>
-              <div className="space-y-2">
-                {materials.map((material) => (
-                  <div key={material.id} className="flex items-center justify-between p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <span className="text-sm">{material.name}</span>
-                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>E: {material.E} MPa</span>
-                  </div>
-                ))}
-              </div>
+              <Label>Select from Library</Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose material" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="m25">M25 Concrete</SelectItem>
+                  <SelectItem value="m30">M30 Concrete</SelectItem>
+                  <SelectItem value="fe415">Fe 415 Steel</SelectItem>
+                  <SelectItem value="fe500">Fe 500 Steel</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+          </TabsContent>
+
+          <TabsContent value="custom">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="name">Material Name</Label>
+                  <Input id="name" {...register('name')} placeholder="Custom Material" />
+                </div>
+                <div>
+                  <Label>Material Type</Label>
+                  <Select defaultValue="concrete" onValueChange={(v) => setValue('material_type', v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="concrete">Concrete</SelectItem>
+                      <SelectItem value="steel">Steel</SelectItem>
+                      <SelectItem value="timber">Timber</SelectItem>
+                      <SelectItem value="masonry">Masonry</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="elastic_modulus">Elastic Modulus (MPa)</Label>
+                  <Input
+                    id="elastic_modulus"
+                    type="number"
+                    {...register('elastic_modulus', { valueAsNumber: true })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="poissons_ratio">Poisson's Ratio</Label>
+                  <Input
+                    id="poissons_ratio"
+                    type="number"
+                    step="0.01"
+                    {...register('poissons_ratio', { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="density">Density (kg/m³)</Label>
+                  <Input
+                    id="density"
+                    type="number"
+                    {...register('density', { valueAsNumber: true })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="yield_strength">Yield Strength (MPa)</Label>
+                  <Input
+                    id="yield_strength"
+                    type="number"
+                    {...register('yield_strength', { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Creating...' : 'Create Material'}
+                </Button>
+              </DialogFooter>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
 }

@@ -1,29 +1,76 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError, OperationalError
+from pydantic import BaseModel, field_validator, Field
 from typing import List, Optional
+import logging
 from app.core.database import get_db
 from app.models.project import Material
+from app.core.validators import MaterialValidator
+from app.core.errors import (
+    InvalidMaterialPropertyError, MaterialNotFoundError,
+    error_to_http_response
+)
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 class MaterialCreate(BaseModel):
     project_id: int
-    material_id: str
-    name: str
-    E: float  # Young's modulus (MPa)
-    nu: float  # Poisson's ratio
-    density: float  # kg/m³
-    fy: Optional[float] = None  # Yield strength (MPa)
-    material_type: Optional[str] = "concrete"
+    material_id: str = Field(..., description="Unique material identifier")
+    name: str = Field(..., description="Material name")
+    E: float = Field(..., gt=0, description="Young's modulus (MPa)")
+    nu: float = Field(..., ge=-1, le=0.5, description="Poisson's ratio")
+    density: float = Field(..., gt=0, description="Density (kg/m³)")
+    fy: Optional[float] = Field(None, gt=0, description="Yield strength (MPa)")
+    fu: Optional[float] = Field(None, gt=0, description="Ultimate strength (MPa)")
+    material_type: Optional[str] = Field("concrete", description="Material type")
+    
+    @field_validator('E')
+    @classmethod
+    def validate_E(cls, v, info):
+        """Validate Young's modulus"""
+        is_valid, error = MaterialValidator.validate_elastic_modulus(v)
+        if not is_valid:
+            raise ValueError(error)
+        return v
+    
+    @field_validator('nu')
+    @classmethod
+    def validate_nu(cls, v, info):
+        """Validate Poisson's ratio"""
+        is_valid, error = MaterialValidator.validate_poisson_ratio(v)
+        if not is_valid:
+            raise ValueError(error)
+        return v
+    
+    @field_validator('density')
+    @classmethod
+    def validate_density(cls, v, info):
+        """Validate density"""
+        is_valid, error = MaterialValidator.validate_density(v)
+        if not is_valid:
+            raise ValueError(error)
+        return v
+    
+    @field_validator('fu')
+    @classmethod
+    def validate_fu(cls, v, info):
+        """Validate ultimate strength"""
+        if v is not None and 'fy' in values and info.data.get('fy') is not None:
+            is_valid, error = MaterialValidator.validate_yield_stress(info.data.get('fy'), v)
+            if not is_valid:
+                raise ValueError(error)
+        return v
 
 class MaterialUpdate(BaseModel):
-    name: Optional[str] = None
-    E: Optional[float] = None
-    nu: Optional[float] = None
-    density: Optional[float] = None
-    fy: Optional[float] = None
-    material_type: Optional[str] = None
+    name: Optional[str] = Field(None, description="Material name")
+    E: Optional[float] = Field(None, gt=0, description="Young's modulus (MPa)")
+    nu: Optional[float] = Field(None, ge=-1, le=0.5, description="Poisson's ratio")
+    density: Optional[float] = Field(None, gt=0, description="Density (kg/m³)")
+    fy: Optional[float] = Field(None, gt=0, description="Yield strength (MPa)")
+    fu: Optional[float] = Field(None, gt=0, description="Ultimate strength (MPa)")
+    material_type: Optional[str] = Field(None, description="Material type")
 
 class MaterialResponse(BaseModel):
     id: int
@@ -113,8 +160,35 @@ def get_material_library():
 
 @router.post("/create", response_model=MaterialResponse)
 def create_material(material: MaterialCreate, db: Session = Depends(get_db)):
-    """Create a new material"""
+    """
+    Create a new material with comprehensive validation
+    
+    Validates:
+    - Young's modulus (1,000 - 500,000 MPa)
+    - Poisson's ratio (-1.0 to 0.5)
+    - Density (100 - 20,000 kg/m³)
+    - Yield vs ultimate strength relationship
+    """
     try:
+        # Additional validation
+        is_valid, error = MaterialValidator.validate_elastic_modulus(material.E)
+        if not is_valid:
+            raise InvalidMaterialPropertyError(error)
+        
+        is_valid, error = MaterialValidator.validate_poisson_ratio(material.nu)
+        if not is_valid:
+            raise InvalidMaterialPropertyError(error)
+        
+        is_valid, error = MaterialValidator.validate_density(material.density)
+        if not is_valid:
+            raise InvalidMaterialPropertyError(error)
+        
+        if material.fy and material.fu:
+            is_valid, error = MaterialValidator.validate_yield_stress(material.fy, material.fu)
+            if not is_valid:
+                raise InvalidMaterialPropertyError(error)
+        
+        # Create material
         db_material = Material(
             project_id=material.project_id,
             material_id=material.material_id,
@@ -128,10 +202,32 @@ def create_material(material: MaterialCreate, db: Session = Depends(get_db)):
         db.add(db_material)
         db.commit()
         db.refresh(db_material)
+        
+        logger.info(f"Created material {material.material_id}: {material.name} (E={material.E} MPa)")
         return db_material
+        
+    except InvalidMaterialPropertyError as e:
+        db.rollback()
+        response = error_to_http_response(e)
+        raise HTTPException(status_code=response['status_code'], detail=response['detail'])
+    
+    except IntegrityError as e:
+        db.rollback()
+        if "unique constraint" in str(e).lower():
+            raise HTTPException(status_code=409, detail=f"Material with ID '{material.material_id}' already exists")
+        elif "foreign key" in str(e).lower():
+            raise HTTPException(status_code=404, detail=f"Project {material.project_id} not found")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    except OperationalError as e:
+        db.rollback()
+        logger.error(f"Database error creating material: {e}")
+        raise HTTPException(status_code=503, detail="Database temporarily unavailable")
+    
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Unexpected error creating material: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/list/{project_id}", response_model=List[MaterialResponse])
 def list_materials(project_id: int, db: Session = Depends(get_db)):

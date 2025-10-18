@@ -1,21 +1,33 @@
-import React from 'react'
-import MenuBar from './MenuBar'
-import Toolbar from './Toolbar'
-import StatusBar from './StatusBar'
+'use client';
+
+import { ReactNode } from 'react';
+import { Header } from './Header';
+import { LeftPanel } from './LeftPanel';
+import { RightPanel } from './RightPanel';
+import { StatusBar } from './StatusBar';
+import { MainToolbar } from './MainToolbar';
 
 interface MainLayoutProps {
-  children: React.ReactNode
+  children: ReactNode;
 }
 
-export default function MainLayout({ children }: MainLayoutProps) {
+export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className="h-screen flex flex-col" style={{ background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>
-      <MenuBar />
-      <Toolbar />
-      <div className="flex-1 overflow-hidden">
-        {children}
+    <div className="h-screen flex flex-col bg-gray-50">
+      <Header />
+      <MainToolbar />
+      
+      <div className="flex-1 flex overflow-hidden">
+        <LeftPanel />
+        
+        <main className="flex-1 relative bg-gray-900">
+          {children}
+        </main>
+        
+        <RightPanel />
       </div>
+      
       <StatusBar />
     </div>
-  )
+  );
 }

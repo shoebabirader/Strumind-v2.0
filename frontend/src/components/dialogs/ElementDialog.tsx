@@ -1,212 +1,145 @@
-import React, { useState } from 'react'
-import { X, Plus } from 'lucide-react'
-import { useModel } from '@/contexts/ModelContext'
-import api from '@/lib/api'
+'use client';
+
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useElements } from '@/hooks/useElements';
+import { useModelStore } from '@/stores/modelStore';
+
+const elementSchema = z.object({
+  node_i: z.number().min(1, 'Start node is required'),
+  node_j: z.number().min(1, 'End node is required'),
+  section_id: z.number().min(1, 'Section is required'),
+  material_id: z.number().min(1, 'Material is required'),
+  element_type: z.enum(['beam', 'column', 'truss', 'cable']),
+});
+
+type ElementFormData = z.infer<typeof elementSchema>;
 
 interface ElementDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  elementToEdit?: any
+  open: boolean;
+  onClose: () => void;
+  elementId?: number;
 }
 
-export default function ElementDialog({ isOpen, onClose, elementToEdit }: ElementDialogProps) {
-  const { addElement, nodes, materials } = useModel()
-  const [formData, setFormData] = useState({
-    id: elementToEdit?.id || '',
-    nodeI: elementToEdit?.nodeI || '',
-    nodeJ: elementToEdit?.nodeJ || '',
-    type: elementToEdit?.type || 'beam',
-    materialId: elementToEdit?.materialId || '',
-    sectionType: elementToEdit?.sectionType || 'rectangular',
-    width: elementToEdit?.width || 0.3,
-    height: elementToEdit?.height || 0.5,
-  })
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+export function ElementDialog({ open, onClose, elementId }: ElementDialogProps) {
+  const { currentProject } = useModelStore();
+  const { createElement, updateElement } = useElements(currentProject?.id);
+  const [loading, setLoading] = useState(false);
 
-  if (!isOpen) return null
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<ElementFormData>({
+    resolver: zodResolver(elementSchema),
+    defaultValues: {
+      node_i: 0,
+      node_j: 0,
+      section_id: 0,
+      material_id: 0,
+      element_type: 'beam',
+    },
+  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+  const onSubmit = async (data: ElementFormData) => {
+    if (!currentProject) return;
     
+    setLoading(true);
     try {
-      const elementData = {
-        ...formData,
-        width: parseFloat(formData.width as any),
-        height: parseFloat(formData.height as any),
+      if (elementId) {
+        await updateElement({ id: elementId, data: { ...data, project_id: currentProject.id } });
+      } else {
+        await createElement({ ...data, project_id: currentProject.id });
       }
-      
-      // Save to backend
-      await api.post('/api/elements/create', elementData)
-      
-      // Add to local state
-      addElement(elementData)
-      
-      onClose()
-      setFormData({ id: '', nodeI: '', nodeJ: '', type: 'beam', materialId: '', sectionType: 'rectangular', width: 0.3, height: 0.5 })
-    } catch (err: any) {
-      const errorMsg = err.response?.data?.detail 
-        ? (typeof err.response.data.detail === 'string' 
-          ? err.response.data.detail 
-          : JSON.stringify(err.response.data.detail))
-        : 'Failed to add element'
-      setError(errorMsg)
+      onClose();
+    } catch (error) {
+      console.error('Failed to save element:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="panel w-full max-w-lg">
-        <div className="panel-header">
-          <span>{elementToEdit ? 'Edit Element' : 'Add Element'}</span>
-          <button onClick={onClose} className="toolbar-button">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>{elementId ? 'Edit Element' : 'Create Element'}</DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Element ID</label>
-              <input
-                type="text"
-                value={formData.id}
-                onChange={(e) => setFormData({ ...formData, id: e.target.value })}
-                required
-                placeholder="E1"
+              <Label htmlFor="node_i">Start Node ID</Label>
+              <Input
+                id="node_i"
+                type="number"
+                {...register('node_i', { valueAsNumber: true })}
               />
+              {errors.node_i && <p className="text-sm text-red-500">{errors.node_i.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Type</label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-              >
-                <option value="beam">Beam</option>
-                <option value="column">Column</option>
-                <option value="brace">Brace</option>
-                <option value="truss">Truss</option>
-              </select>
+              <Label htmlFor="node_j">End Node ID</Label>
+              <Input
+                id="node_j"
+                type="number"
+                {...register('node_j', { valueAsNumber: true })}
+              />
+              {errors.node_j && <p className="text-sm text-red-500">{errors.node_j.message}</p>}
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="element_type">Element Type</Label>
+            <Select
+              onValueChange={(value) => setValue('element_type', value as any)}
+              defaultValue="beam"
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select element type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beam">Beam</SelectItem>
+                <SelectItem value="column">Column</SelectItem>
+                <SelectItem value="truss">Truss</SelectItem>
+                <SelectItem value="cable">Cable</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Node I</label>
-              <select
-                value={formData.nodeI}
-                onChange={(e) => setFormData({ ...formData, nodeI: e.target.value })}
-                required
-              >
-                <option value="">Select Node</option>
-                {nodes.map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.id} ({node.x}, {node.y}, {node.z})
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="section_id">Section ID</Label>
+              <Input
+                id="section_id"
+                type="number"
+                {...register('section_id', { valueAsNumber: true })}
+              />
+              {errors.section_id && <p className="text-sm text-red-500">{errors.section_id.message}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Node J</label>
-              <select
-                value={formData.nodeJ}
-                onChange={(e) => setFormData({ ...formData, nodeJ: e.target.value })}
-                required
-              >
-                <option value="">Select Node</option>
-                {nodes.map((node) => (
-                  <option key={node.id} value={node.id}>
-                    {node.id} ({node.x}, {node.y}, {node.z})
-                  </option>
-                ))}
-              </select>
+              <Label htmlFor="material_id">Material ID</Label>
+              <Input
+                id="material_id"
+                type="number"
+                {...register('material_id', { valueAsNumber: true })}
+              />
+              {errors.material_id && <p className="text-sm text-red-500">{errors.material_id.message}</p>}
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Material</label>
-            <select
-              value={formData.materialId}
-              onChange={(e) => setFormData({ ...formData, materialId: e.target.value })}
-              required
-            >
-              <option value="">Select Material</option>
-              {materials.map((material) => (
-                <option key={material.id} value={material.id}>
-                  {material.name} (E={material.E} MPa)
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>Section Properties</label>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Type</label>
-                <select
-                  value={formData.sectionType}
-                  onChange={(e) => setFormData({ ...formData, sectionType: e.target.value })}
-                >
-                  <option value="rectangular">Rectangular</option>
-                  <option value="circular">Circular</option>
-                  <option value="i-section">I-Section</option>
-                  <option value="t-section">T-Section</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Width (m)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.width}
-                  onChange={(e) => setFormData({ ...formData, width: e.target.value as any })}
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>Height (m)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.height}
-                  onChange={(e) => setFormData({ ...formData, height: e.target.value as any })}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          {error && (
-            <div className="p-3 rounded" style={{ background: 'var(--accent-red)', color: 'white' }}>
-              {error}
-            </div>
-          )}
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <button type="button" onClick={onClose} className="btn-secondary" disabled={loading}>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
-            </button>
-            <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Adding...
-                </>
-              ) : (
-                <>
-                  <Plus className="w-4 h-4 mr-2" />
-                  {elementToEdit ? 'Update' : 'Add'} Element
-                </>
-              )}
-            </button>
-          </div>
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading ? 'Saving...' : elementId ? 'Update' : 'Create'}
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
-  )
+      </DialogContent>
+    </Dialog>
+  );
 }

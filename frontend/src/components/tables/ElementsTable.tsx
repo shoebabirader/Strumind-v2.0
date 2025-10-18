@@ -1,96 +1,92 @@
-import React from 'react'
-import { Edit2, Trash2, Box } from 'lucide-react'
-import { useModel } from '@/contexts/ModelContext'
+'use client';
 
-interface ElementsTableProps {
-  onEdit?: (element: any) => void
-}
+import { useElements } from '@/hooks/useElements';
+import { useModelStore } from '@/stores/modelStore';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Pencil, Trash2 } from 'lucide-react';
 
-export default function ElementsTable({ onEdit }: ElementsTableProps) {
-  const { elements } = useModel()
+export function ElementsTable() {
+  const { currentProject } = useModelStore();
+  const { elements, deleteElement } = useElements(currentProject?.id);
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'beam': return 'var(--accent-blue)'
-      case 'column': return 'var(--accent-red)'
-      case 'brace': return 'var(--accent-green)'
-      case 'truss': return 'var(--accent-purple)'
-      default: return 'var(--text-tertiary)'
+  const handleDelete = async (id: number) => {
+    if (confirm('Are you sure you want to delete this element?')) {
+      await deleteElement(id);
     }
-  }
+  };
+
+  const getElementTypeBadge = (type: string) => {
+    const colors: Record<string, string> = {
+      beam: 'bg-blue-100 text-blue-800',
+      column: 'bg-green-100 text-green-800',
+      truss: 'bg-yellow-100 text-yellow-800',
+      cable: 'bg-purple-100 text-purple-800',
+    };
+    return colors[type] || 'bg-gray-100 text-gray-800';
+  };
 
   return (
-    <div className="panel flex-1 flex flex-col">
-      <div className="panel-header">
-        <span><Box className="w-4 h-4 inline mr-2" />Elements ({elements.length})</span>
-      </div>
-      
-      <div className="flex-1 overflow-auto">
-        <table className="w-full">
-          <thead style={{ background: 'var(--bg-tertiary)', position: 'sticky', top: 0 }}>
-            <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>ID</th>
-              <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Type</th>
-              <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Node I</th>
-              <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Node J</th>
-              <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Material</th>
-              <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Section</th>
-              <th className="px-4 py-2 text-center text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {elements.map((element, idx) => (
-              <tr 
-                key={element.id}
-                className="border-t hover:bg-opacity-50 transition-colors"
-                style={{ 
-                  borderColor: 'var(--border-primary)',
-                  background: idx % 2 === 0 ? 'transparent' : 'var(--bg-tertiary)'
-                }}
-              >
-                <td className="px-4 py-2 text-sm font-medium">{element.id}</td>
-                <td className="px-4 py-2 text-center">
-                  <span
-                    className="px-2 py-1 rounded text-xs font-medium"
-                    style={{ background: getTypeColor(element.type), color: 'white' }}
-                  >
-                    {element.type}
-                  </span>
-                </td>
-                <td className="px-4 py-2 text-sm text-center">{element.nodeI}</td>
-                <td className="px-4 py-2 text-sm text-center">{element.nodeJ}</td>
-                <td className="px-4 py-2 text-sm text-center">{element.materialId}</td>
-                <td className="px-4 py-2 text-sm text-center">
-                  {element.sectionType} ({element.width}×{element.height})
-                </td>
-                <td className="px-4 py-2">
-                  <div className="flex justify-center space-x-2">
-                    <button
-                      onClick={() => onEdit?.(element)}
-                      className="toolbar-button"
-                      title="Edit"
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>ID</TableHead>
+            <TableHead>Type</TableHead>
+            <TableHead>Node I</TableHead>
+            <TableHead>Node J</TableHead>
+            <TableHead>Section</TableHead>
+            <TableHead>Material</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {elements.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center text-gray-500">
+                No elements created yet
+              </TableCell>
+            </TableRow>
+          ) : (
+            elements.map((element) => (
+              <TableRow key={element.id}>
+                <TableCell className="font-medium">{element.id}</TableCell>
+                <TableCell>
+                  <Badge className={getElementTypeBadge(element.element_type)}>
+                    {element.element_type}
+                  </Badge>
+                </TableCell>
+                <TableCell>{element.node_i}</TableCell>
+                <TableCell>{element.node_j}</TableCell>
+                <TableCell>{element.section_id}</TableCell>
+                <TableCell>{element.material_id}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button size="sm" variant="ghost">
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(element.id)}
                     >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      className="toolbar-button"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        
-        {elements.length === 0 && (
-          <div className="flex items-center justify-center h-32" style={{ color: 'var(--text-tertiary)' }}>
-            No elements defined. Click "Add Element" to create one.
-          </div>
-        )}
-      </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
-  )
+  );
 }

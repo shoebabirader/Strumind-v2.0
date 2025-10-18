@@ -466,14 +466,29 @@ class StructuralAnalysis:
         eigenvalues = eigenvalues[idx[:n_modes]]
         eigenvectors = eigenvectors[:, idx[:n_modes]]
         
+        # Calculate frequencies with guards against numerical issues
+        # Filter out rigid body modes (near-zero eigenvalues)
+        tolerance = 1e-6
+        valid_modes = eigenvalues > tolerance
+        
+        eigenvalues_valid = eigenvalues[valid_modes]
+        eigenvectors_valid = eigenvectors[:, valid_modes]
+        
+        # Limit to requested number of modes
+        n_valid = min(len(eigenvalues_valid), n_modes)
+        eigenvalues = eigenvalues_valid[:n_valid]
+        eigenvectors = eigenvectors_valid[:, :n_valid]
+        
         # Calculate frequencies
         omega = np.sqrt(np.abs(eigenvalues))
         frequencies = omega / (2 * np.pi)  # Hz
-        periods = 1 / frequencies  # seconds
+        
+        # Guard against division by zero in period calculation
+        periods = np.where(frequencies > 1e-10, 1.0 / frequencies, np.inf)  # seconds
         
         # Expand mode shapes to full DOF
         mode_shapes_full = []
-        for i in range(n_modes):
+        for i in range(len(eigenvalues)):  # Use actual number of valid modes
             mode_full = np.zeros(len(self.geometry.nodes) * 6)
             mode_full[self.free_dofs] = eigenvectors[:, i]
             mode_shapes_full.append(mode_full)

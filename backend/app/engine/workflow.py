@@ -17,7 +17,7 @@ from .analysis import StructuralAnalysis
 from .seismic import SeismicAnalysis, SeismicCode, SeismicZone, SoilType
 from .wind import WindAnalysis, WindCode, TerrainCategory, BuildingClass
 from .pdelta import PDeltaAnalysis
-from .design_codes import IS456
+from .design_codes import IS456ConcreteDesign
 
 
 @dataclass
@@ -506,7 +506,7 @@ class StructuralWorkflow:
         if 'static' not in self.results:
             raise ValueError("No analysis results. Run run_static_analysis first.")
             
-        is456 = IS456()
+        is456 = IS456ConcreteDesign()
         member_forces = self.results['static'].member_forces
         
         design_results = {

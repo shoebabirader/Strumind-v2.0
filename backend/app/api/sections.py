@@ -1,23 +1,55 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from sqlalchemy.exc import IntegrityError, OperationalError
+from pydantic import BaseModel, field_validator, Field
 from typing import List, Optional
+import logging
+import math
 from app.core.database import get_db
 from app.models.project import Section
+from app.core.validators import SectionValidator
+from app.core.errors import InvalidSectionPropertyError, error_to_http_response
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 class SectionCreate(BaseModel):
     project_id: int
-    section_id: str
-    name: str
-    section_type: str  # rectangular, circular, i-section, t-section
-    width: Optional[float] = None
-    height: Optional[float] = None
-    diameter: Optional[float] = None
-    flange_width: Optional[float] = None
-    flange_thickness: Optional[float] = None
-    web_thickness: Optional[float] = None
+    section_id: str = Field(..., description="Unique section identifier")
+    name: str = Field(..., description="Section name")
+    section_type: str = Field(..., description="Section type")
+    width: Optional[float] = Field(None, gt=0, description="Width (m)")
+    height: Optional[float] = Field(None, gt=0, description="Height (m)")
+    diameter: Optional[float] = Field(None, gt=0, description="Diameter (m)")
+    flange_width: Optional[float] = Field(None, gt=0, description="Flange width (m)")
+    flange_thickness: Optional[float] = Field(None, gt=0, description="Flange thickness (m)")
+    web_thickness: Optional[float] = Field(None, gt=0, description="Web thickness (m)")
+    
+    @field_validator('section_type')
+    @classmethod
+    def validate_section_type(cls, v, info):
+        """Validate section type"""
+        valid_types = ['rectangular', 'circular', 'i-section', 't-section', 'box', 'channel']
+        if v.lower() not in valid_types:
+            raise ValueError(f"Section type must be one of: {', '.join(valid_types)}")
+        return v.lower()
+    
+    def calculate_properties(self):
+        """Calculate section properties (A, Iy, Iz, J)"""
+        if self.section_type == 'rectangular' and self.width and self.height:
+            b, h = self.width * 1000, self.height * 1000  # Convert to mm
+            A = b * h
+            Iy = (b * h**3) / 12
+            Iz = (h * b**3) / 12
+            J = (b * h**3) * (1/3 - 0.21 * (h/b) * (1 - h**4/(12*b**4)))
+            return {'A': A, 'Iy': Iy, 'Iz': Iz, 'J': J}
+        elif self.section_type == 'circular' and self.diameter:
+            d = self.diameter * 1000  # Convert to mm
+            A = math.pi * d**2 / 4
+            I = math.pi * d**4 / 64
+            J = math.pi * d**4 / 32
+            return {'A': A, 'Iy': I, 'Iz': I, 'J': J}
+        return None
 
 class SectionUpdate(BaseModel):
     name: Optional[str] = None
@@ -98,8 +130,22 @@ def get_section_library():
 
 @router.post("/create", response_model=SectionResponse)
 def create_section(section: SectionCreate, db: Session = Depends(get_db)):
-    """Create a new section"""
+    """
+    Create a new section with validation
+    
+    Validates section properties and calculates A, Iy, Iz, J
+    """
     try:
+        # Calculate section properties
+        props = section.calculate_properties()
+        if props:
+            # Validate calculated properties
+            is_valid, error = SectionValidator.validate_section_properties(
+                props['A'], props['Iy'], props['Iz'], props['J']
+            )
+            if not is_valid:
+                raise InvalidSectionPropertyError(error)
+        
         db_section = Section(
             project_id=section.project_id,
             section_id=section.section_id,
@@ -115,10 +161,30 @@ def create_section(section: SectionCreate, db: Session = Depends(get_db)):
         db.add(db_section)
         db.commit()
         db.refresh(db_section)
+        
+        logger.info(f"Created section {section.section_id}: {section.name}")
         return db_section
+        
+    except InvalidSectionPropertyError as e:
+        db.rollback()
+        response = error_to_http_response(e)
+        raise HTTPException(status_code=response['status_code'], detail=response['detail'])
+    
+    except IntegrityError as e:
+        db.rollback()
+        if "unique constraint" in str(e).lower():
+            raise HTTPException(status_code=409, detail=f"Section with ID '{section.section_id}' already exists")
+        raise HTTPException(status_code=400, detail=str(e))
+    
+    except OperationalError as e:
+        db.rollback()
+        logger.error(f"Database error creating section: {e}")
+        raise HTTPException(status_code=503, detail="Database temporarily unavailable")
+    
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error(f"Unexpected error creating section: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
 
 @router.get("/list/{project_id}", response_model=List[SectionResponse])
 def list_sections(project_id: int, db: Session = Depends(get_db)):

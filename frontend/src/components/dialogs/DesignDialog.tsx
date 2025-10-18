@@ -1,117 +1,120 @@
-import React, { useState } from 'react'
-import { X, Ruler } from 'lucide-react'
+'use client';
+
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useDesign } from '@/hooks/useDesign';
+import { useModelStore } from '@/stores/modelStore';
 
 interface DesignDialogProps {
-  isOpen: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
 }
 
-export default function DesignDialog({ isOpen, onClose }: DesignDialogProps) {
-  const [designType, setDesignType] = useState('concrete')
-  const [code, setCode] = useState('IS456')
+export function DesignDialog({ open, onClose }: DesignDialogProps) {
+  const { currentProject } = useModelStore();
+  const { runDesign, isLoading } = useDesign();
+  const [designCode, setDesignCode] = useState('IS456');
+  const [designType, setDesignType] = useState<'concrete' | 'steel'>('concrete');
 
-  if (!isOpen) return null
+  const handleRunDesign = async () => {
+    if (!currentProject) return;
+
+    try {
+      await runDesign({
+        model_id: currentProject.id,
+        design_code: designCode,
+        design_type: designType,
+      });
+      onClose();
+    } catch (error) {
+      console.error('Design failed:', error);
+    }
+  };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="panel w-full max-w-2xl">
-        <div className="panel-header">
-          <span><Ruler className="w-4 h-4 inline mr-2" />Design Settings</span>
-          <button onClick={onClose} className="toolbar-button">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>Member Design</DialogTitle>
+        </DialogHeader>
 
-        <div className="p-6 space-y-6">
-          {/* Design Type */}
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-              Design Type
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { value: 'concrete', label: 'Concrete Design' },
-                { value: 'steel', label: 'Steel Design' },
-                { value: 'foundation', label: 'Foundation Design' },
-              ].map((type) => (
-                <label
-                  key={type.value}
-                  className={`panel p-3 cursor-pointer transition-all ${
-                    designType === type.value ? 'border-blue-500' : ''
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="designType"
-                    value={type.value}
-                    checked={designType === type.value}
-                    onChange={(e) => setDesignType(e.target.value)}
-                    className="mr-2"
-                  />
-                  <span className="text-sm">{type.label}</span>
-                </label>
-              ))}
+        <Tabs defaultValue="concrete" onValueChange={(v) => setDesignType(v as any)}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="concrete">Concrete Design</TabsTrigger>
+            <TabsTrigger value="steel">Steel Design</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="concrete" className="space-y-4">
+            <div>
+              <Label>Design Code</Label>
+              <Select value={designCode} onValueChange={setDesignCode}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IS456">IS 456:2000</SelectItem>
+                  <SelectItem value="ACI318">ACI 318-19</SelectItem>
+                  <SelectItem value="BS8110">BS 8110</SelectItem>
+                  <SelectItem value="EC2">Eurocode 2</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </div>
 
-          {/* Design Code */}
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-              Design Code
-            </label>
-            <select
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              className="w-full"
-            >
-              <option value="IS456">IS 456:2000 (India)</option>
-              <option value="ACI318">ACI 318 (USA)</option>
-              <option value="EC2">Eurocode 2 (Europe)</option>
-              <option value="BS8110">BS 8110 (UK)</option>
-            </select>
-          </div>
-
-          {/* Design Parameters */}
-          <div>
-            <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-              Design Parameters
-            </label>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                  Concrete Grade
-                </label>
-                <select className="w-full">
-                  <option>M20</option>
-                  <option>M25</option>
-                  <option>M30</option>
-                  <option>M35</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                  Steel Grade
-                </label>
-                <select className="w-full">
-                  <option>Fe415</option>
-                  <option>Fe500</option>
-                  <option>Fe550</option>
-                </select>
-              </div>
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <h4 className="font-medium text-sm mb-2">Concrete Design Features:</h4>
+              <ul className="text-sm space-y-1 text-gray-700">
+                <li>• Flexural design (beams & slabs)</li>
+                <li>• Shear design with stirrups</li>
+                <li>• Column design (axial + bending)</li>
+                <li>• Torsion design</li>
+                <li>• Detailing as per code</li>
+              </ul>
             </div>
-          </div>
+          </TabsContent>
 
-          <div className="flex justify-end space-x-3 pt-4">
-            <button onClick={onClose} className="btn-secondary">
-              Cancel
-            </button>
-            <button className="btn-primary">
-              <Ruler className="w-4 h-4 mr-2" />
-              Run Design
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+          <TabsContent value="steel" className="space-y-4">
+            <div>
+              <Label>Design Code</Label>
+              <Select value={designCode} onValueChange={setDesignCode}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IS800">IS 800:2007</SelectItem>
+                  <SelectItem value="AISC360">AISC 360-16</SelectItem>
+                  <SelectItem value="BS5950">BS 5950</SelectItem>
+                  <SelectItem value="EC3">Eurocode 3</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="p-4 bg-green-50 rounded-lg">
+              <h4 className="font-medium text-sm mb-2">Steel Design Features:</h4>
+              <ul className="text-sm space-y-1 text-gray-700">
+                <li>• Tension member design</li>
+                <li>• Compression member design</li>
+                <li>• Beam design (flexure & shear)</li>
+                <li>• Connection design</li>
+                <li>• Buckling checks</li>
+              </ul>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button onClick={handleRunDesign} disabled={isLoading}>
+            {isLoading ? 'Designing...' : 'Run Design'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

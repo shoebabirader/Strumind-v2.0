@@ -10,7 +10,10 @@ from app.api import (
     specialized_design, serviceability, auth, versioning,
     websocket, cache_management, parallel_analysis, plugins,
     pushover, foundation, advanced_features, generative,
-    nodes, elements, materials, loads, sections
+    nodes, elements, materials, loads, sections,
+    slab_design, workflow, geometry, optimization,
+    results_processing, load_combinations, nonlinear, units,
+    dynamic_analysis, advanced_elements
 )
 
 # Initialize database (optional - core features work without it)
@@ -38,7 +41,7 @@ app.add_middleware(RateLimiter, requests_per_minute=100)
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: Restrict in production
+    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # Frontend origins
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -89,6 +92,18 @@ app.include_router(pushover.router, prefix="/api", tags=["pushover"])
 app.include_router(foundation.router, prefix="/api/foundation", tags=["foundation"])
 app.include_router(advanced_features.router, prefix="/api/advanced", tags=["advanced"])
 app.include_router(generative.router, prefix="/api/generative", tags=["generative"])
+
+# New comprehensive features
+app.include_router(slab_design.router, prefix="/api", tags=["slab-design"])
+app.include_router(workflow.router, prefix="/api", tags=["workflow"])
+app.include_router(geometry.router, prefix="/api", tags=["geometry"])
+app.include_router(optimization.router, prefix="/api", tags=["optimization"])
+app.include_router(results_processing.router, prefix="/api", tags=["results"])
+app.include_router(load_combinations.router, prefix="/api", tags=["load-combinations"])
+app.include_router(nonlinear.router, prefix="/api", tags=["nonlinear"])
+app.include_router(units.router, prefix="/api", tags=["units"])
+app.include_router(dynamic_analysis.router, prefix="/api", tags=["dynamic"])
+app.include_router(advanced_elements.router, prefix="/api", tags=["advanced-elements"])
 
 @app.get("/")
 def root():

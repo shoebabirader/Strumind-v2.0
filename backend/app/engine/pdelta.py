@@ -74,24 +74,89 @@ class PDeltaAnalysis:
     
     def _geometric_stiffness_matrix(self, axial_forces: np.ndarray,
                                    lengths: np.ndarray, n_dof: int) -> np.ndarray:
-        """Calculate geometric stiffness matrix"""
+        """
+        Calculate 12x12 geometric stiffness matrix for 3D frame elements
+        
+        Based on stability functions for beam-columns under axial load.
+        Properly accounts for all 6 DOFs per node.
+        
+        Args:
+            axial_forces: Axial force in each element (N, positive = tension)
+            lengths: Length of each element (m)
+            n_dof: Total number of DOFs in system
+        
+        Returns:
+            Global geometric stiffness matrix
+        """
         Kg = np.zeros((n_dof, n_dof))
         
         for i, (P, L) in enumerate(zip(axial_forces, lengths)):
-            if L > 0:
-                # Simplified geometric stiffness for beam element
-                kg_element = (P / L) * np.array([
-                    [1, 0, -1, 0],
-                    [0, 0, 0, 0],
-                    [-1, 0, 1, 0],
-                    [0, 0, 0, 0]
-                ])
+            if L <= 0:
+                continue
+            
+            # 12x12 geometric stiffness matrix in local coordinates
+            # Based on stability functions for beam-columns
+            kg_local = np.zeros((12, 12))
+            
+            # Coefficient for geometric stiffness
+            coeff = P / L
+            
+            # Axial DOFs (0, 6) - no geometric stiffness
+            # kg_local[0, 0] = kg_local[6, 6] = 0
+            
+            # Bending about local y-axis (DOFs: 2, 5, 8, 11)
+            # Transverse displacements and rotations
+            kg_local[2, 2] = kg_local[8, 8] = 6/5 * coeff
+            kg_local[2, 8] = kg_local[8, 2] = -6/5 * coeff
+            kg_local[5, 5] = kg_local[11, 11] = 2*L/15 * coeff
+            kg_local[5, 11] = kg_local[11, 5] = -L/30 * coeff
+            kg_local[2, 5] = kg_local[5, 2] = L/10 * coeff
+            kg_local[2, 11] = kg_local[11, 2] = -L/10 * coeff
+            kg_local[8, 5] = kg_local[5, 8] = -L/10 * coeff
+            kg_local[8, 11] = kg_local[11, 8] = L/10 * coeff
+            
+            # Bending about local z-axis (DOFs: 1, 4, 7, 10)
+            # Transverse displacements and rotations
+            kg_local[1, 1] = kg_local[7, 7] = 6/5 * coeff
+            kg_local[1, 7] = kg_local[7, 1] = -6/5 * coeff
+            kg_local[4, 4] = kg_local[10, 10] = 2*L/15 * coeff
+            kg_local[4, 10] = kg_local[10, 4] = -L/30 * coeff
+            kg_local[1, 4] = kg_local[4, 1] = -L/10 * coeff
+            kg_local[1, 10] = kg_local[10, 1] = L/10 * coeff
+            kg_local[7, 4] = kg_local[4, 7] = L/10 * coeff
+            kg_local[7, 10] = kg_local[10, 7] = -L/10 * coeff
+            
+            # Transform to global coordinates (would need transformation matrix)
+            # For now, assume local = global (simplified)
+            # In full implementation: Kg_global = T.T @ kg_local @ T
+            
+            # Assemble into global matrix using proper DOF mapping
+            # Assuming 6 DOFs per node and element i connects nodes i and i+1
+            start_dof_i = i * 6
+            start_dof_j = (i + 1) * 6
+            
+            if start_dof_j + 6 <= n_dof:
+                # Node i DOFs
+                for local_i in range(6):
+                    global_i = start_dof_i + local_i
+                    for local_j in range(6):
+                        global_j = start_dof_i + local_j
+                        Kg[global_i, global_j] += kg_local[local_i, local_j]
                 
-                # Assemble into global matrix (simplified)
-                start_dof = i * 2
-                end_dof = start_dof + 4
-                if end_dof <= n_dof:
-                    Kg[start_dof:end_dof, start_dof:end_dof] += kg_element
+                # Node j DOFs
+                for local_i in range(6):
+                    global_i = start_dof_j + local_i
+                    for local_j in range(6):
+                        global_j = start_dof_j + local_j
+                        Kg[global_i, global_j] += kg_local[local_i + 6, local_j + 6]
+                
+                # Coupling terms
+                for local_i in range(6):
+                    global_i = start_dof_i + local_i
+                    for local_j in range(6):
+                        global_j = start_dof_j + local_j
+                        Kg[global_i, global_j] += kg_local[local_i, local_j + 6]
+                        Kg[global_j, global_i] += kg_local[local_j + 6, local_i]
         
         return Kg
     

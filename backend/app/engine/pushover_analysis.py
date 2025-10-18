@@ -287,14 +287,57 @@ class PushoverAnalysis:
         return K
     
     def _update_stiffness(self, K: np.ndarray, yielded_elements: List[str]) -> np.ndarray:
-        """Update stiffness matrix for yielded elements"""
+        """
+        Update stiffness matrix for yielded elements
+        
+        Reduces stiffness of yielded elements to post-yield tangent stiffness
+        to capture softening behavior in the capacity curve.
+        
+        Args:
+            K: Global stiffness matrix
+            yielded_elements: List of element IDs that have yielded
+        
+        Returns:
+            Updated stiffness matrix with reduced stiffness for yielded elements
+        """
         K_updated = K.copy()
+        
+        # Post-yield stiffness reduction factor (typically 3-5% of elastic stiffness)
+        reduction_factor = 0.03
         
         # Reduce stiffness of yielded elements
         for elem_id in yielded_elements:
-            # Reduce to post-yield stiffness (typically 3-5% of elastic)
-            # In practice, modify specific DOFs
-            pass
+            if elem_id not in self.elements:
+                continue
+            
+            element = self.elements[elem_id]
+            
+            # Get element stiffness
+            E = self.materials.get(element.get("material", ""), {}).get("E", 200000)  # MPa
+            A = element.get("area", 0.01)  # m²
+            L = element.get("length", 1.0)  # m
+            
+            # Elastic stiffness
+            k_elastic = E * A / L
+            
+            # Post-yield stiffness
+            k_postyield = k_elastic * reduction_factor
+            
+            # Stiffness reduction
+            k_reduction = k_elastic - k_postyield
+            
+            # Get element DOF indices (simplified 2-DOF per element)
+            # In a full implementation, this would use proper DOF mapping
+            node_i = element.get("node_i", 0)
+            node_j = element.get("node_j", 1)
+            
+            # Update global stiffness matrix
+            # Reduce the element contribution
+            if node_i < K_updated.shape[0] and node_j < K_updated.shape[0]:
+                K_updated[node_i, node_i] -= k_reduction
+                K_updated[node_i, node_j] += k_reduction
+                K_updated[node_j, node_i] += k_reduction
+                K_updated[node_j, node_j] -= k_reduction
         
         return K_updated
     

@@ -42,14 +42,35 @@ class ContinuousLearningPipeline:
         optimizer = optim.Adam(model.parameters(), lr=0.001)
         criterion = torch.nn.MSELoss()
         
-        # Training loop (simplified)
+        # Training loop
         model.train()
         for epoch in range(epochs):
             total_loss = 0
             for sample in approved_samples:
-                # Prepare batch (simplified)
-                inputs = torch.randn(1, 10)  # Placeholder
-                targets = torch.randn(1, 6)  # Placeholder
+                # Extract features and targets from sample
+                input_features = sample.get('features', [])
+                target_values = sample.get('targets', [])
+                
+                # Convert to tensors
+                inputs = torch.tensor(input_features, dtype=torch.float32).unsqueeze(0)
+                targets = torch.tensor(target_values, dtype=torch.float32).unsqueeze(0)
+                
+                # Ensure correct dimensions
+                if inputs.shape[1] != 10:
+                    # Pad or truncate to expected size
+                    if inputs.shape[1] < 10:
+                        padding = torch.zeros(1, 10 - inputs.shape[1])
+                        inputs = torch.cat([inputs, padding], dim=1)
+                    else:
+                        inputs = inputs[:, :10]
+                
+                if targets.shape[1] != 6:
+                    # Pad or truncate to expected size
+                    if targets.shape[1] < 6:
+                        padding = torch.zeros(1, 6 - targets.shape[1])
+                        targets = torch.cat([targets, padding], dim=1)
+                    else:
+                        targets = targets[:, :6]
                 
                 optimizer.zero_grad()
                 outputs = model(inputs)
