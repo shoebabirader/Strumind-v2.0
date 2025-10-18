@@ -266,7 +266,7 @@ export function NewDialog() {
 
 ## ✅ CONCLUSION
 
-The StrucMind application has **excellent API-to-frontend coverage** at ~95%. The main gaps are:
+The StruMind application has **excellent API-to-frontend coverage** at ~95%. The main gaps are:
 
 1. **Auth/Legal dialogs** (3 dialogs) - Can use dedicated pages instead
 2. **Advanced analysis dialogs** (4 dialogs) - Nice-to-have enhancements

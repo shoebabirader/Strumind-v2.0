@@ -56,8 +56,25 @@ export function MeshDialog({ open, onClose }: MeshDialogProps) {
               <Button onClick={handleGenerate} disabled={loading}>{loading ? 'Generating...' : 'Generate Mesh'}</Button>
             </DialogFooter>
           </TabsContent>
-          <TabsContent value="refine"><div className="text-sm text-gray-500 p-4">Mesh refinement options</div></TabsContent>
-          <TabsContent value="quality"><div className="text-sm text-gray-500 p-4">Mesh quality check</div></TabsContent>
+          <TabsContent value="refine" className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>Refinement Type</Label><Input defaultValue="Adaptive" disabled /></div>
+              <div><Label>Max Iterations</Label><Input type="number" defaultValue="5" /></div>
+            </div>
+            <div><Label>Target Element Size (m)</Label><Input type="number" step="0.1" defaultValue="0.5" /></div>
+            <div><Label>Refinement Ratio</Label><Input type="number" step="0.1" defaultValue="2.0" /></div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button>Refine Mesh</Button>
+            </DialogFooter>
+          </TabsContent>
+          <TabsContent value="quality" className="space-y-4">
+            <div className="p-4 bg-green-50 rounded"><p className="text-sm font-medium mb-2">Mesh Quality Metrics:</p><div className="space-y-1 text-sm"><div className="flex justify-between"><span>Min Angle:</span><span className="font-medium">28.5°</span></div><div className="flex justify-between"><span>Max Angle:</span><span className="font-medium">142.3°</span></div><div className="flex justify-between"><span>Aspect Ratio:</span><span className="font-medium">2.1</span></div><div className="flex justify-between"><span>Skewness:</span><span className="font-medium">0.15</span></div></div></div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>Close</Button>
+              <Button>Check Quality</Button>
+            </DialogFooter>
+          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>

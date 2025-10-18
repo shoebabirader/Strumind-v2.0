@@ -1,4 +1,4 @@
-# 🏗️ StrucMind v2.0
+# 🏗️ StruMind v2.0
 
 **Professional Structural Analysis & Design Software**
 
@@ -15,7 +15,7 @@
 
 ## 🌟 Overview
 
-StrucMind v2.0 is a comprehensive structural analysis and design platform built with cutting-edge web technologies. It provides engineers with powerful tools for modeling, analyzing, and designing structures while offering a modern, intuitive user experience.
+StruMind v2.0 is a comprehensive structural analysis and design platform built with cutting-edge web technologies. It provides engineers with powerful tools for modeling, analyzing, and designing structures while offering a modern, intuitive user experience.
 
 ### 🎯 Key Highlights
 
@@ -509,14 +509,14 @@ npm run build
 npm start
 
 # Or use PM2
-pm2 start npm --name "strucmind-frontend" -- start
+pm2 start npm --name "strumind-frontend" -- start
 ```
 
 ### Environment Variables
 
 #### Backend (.env)
 ```env
-DATABASE_URL=postgresql://user:pass@localhost/strucmind
+DATABASE_URL=postgresql://user:pass@localhost/strumind
 SECRET_KEY=your-secret-key-here
 REDIS_URL=redis://localhost:6379
 CORS_ORIGINS=http://localhost:3000
@@ -601,7 +601,7 @@ NEXT_PUBLIC_WS_URL=ws://localhost:8000
 
 ## 🏆 Comparison with Industry Tools
 
-| Feature | StrucMind v2.0 | STAAD.Pro | ETABS | SAP2000 |
+| Feature | StruMind v2.0 | STAAD.Pro | ETABS | SAP2000 |
 |---------|----------------|-----------|-------|---------|
 | **Web-Based** | ✅ | ❌ | ❌ | ❌ |
 | **Modern UI** | ✅ | ❌ | ⚠️ | ⚠️ |
@@ -628,7 +628,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 MIT License
 
-Copyright (c) 2024 StrucMind
+Copyright (c) 2024 StruMind
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -667,13 +667,13 @@ copies or substantial portions of the Software.
 - **Documentation**: [docs/](docs/)
 - **Issues**: [GitHub Issues](https://github.com/shoebabirader/Strumind-v2.0/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/shoebabirader/Strumind-v2.0/discussions)
-- **Email**: support@strucmind.com
+- **Email**: support@strumind.com
 
 ### Community
 
-- **Discord**: [Join our Discord](https://discord.gg/strucmind)
-- **Twitter**: [@StrucMind](https://twitter.com/strucmind)
-- **LinkedIn**: [StrucMind](https://linkedin.com/company/strucmind)
+- **Discord**: [Join our Discord](https://discord.gg/strumind)
+- **Twitter**: [@StruMind](https://twitter.com/strumind)
+- **LinkedIn**: [StruMind](https://linkedin.com/company/strumind)
 
 ---
 
@@ -701,6 +701,6 @@ If you find this project useful, please consider giving it a star on GitHub!
 
 **Built with ❤️ by engineers, for engineers**
 
-[Website](https://strucmind.com) • [Documentation](docs/) • [GitHub](https://github.com/shoebabirader/Strumind-v2.0)
+[Website](https://strumind.com) • [Documentation](docs/) • [GitHub](https://github.com/shoebabirader/Strumind-v2.0)
 
 </div>

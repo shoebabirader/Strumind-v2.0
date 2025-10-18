@@ -120,39 +120,39 @@
 
 ## 📊 INDUSTRY COMPARISON
 
-### **StrucMind vs STAAD.Pro:**
-| Feature | STAAD.Pro | StrucMind | Winner |
+### **StruMind vs STAAD.Pro:**
+| Feature | STAAD.Pro | StruMind | Winner |
 |---------|-----------|-----------|--------|
-| View Modes | 4 | 5 | ✅ StrucMind |
-| Selection Tools | 3 | 4 | ✅ StrucMind |
+| View Modes | 4 | 5 | ✅ StruMind |
+| Selection Tools | 3 | 4 | ✅ StruMind |
 | Keyboard Shortcuts | Yes | Yes | ✅ Tie |
 | Animation | Yes | Yes | ✅ Tie |
-| Modern UI | No | Yes | ✅ StrucMind |
-| Web-Based | No | Yes | ✅ StrucMind |
+| Modern UI | No | Yes | ✅ StruMind |
+| Web-Based | No | Yes | ✅ StruMind |
 
-### **StrucMind vs ETABS:**
-| Feature | ETABS | StrucMind | Winner |
+### **StruMind vs ETABS:**
+| Feature | ETABS | StruMind | Winner |
 |---------|-------|-----------|--------|
 | 3D Rendering | Yes | Yes | ✅ Tie |
-| Color Coding | 3 modes | 4 modes | ✅ StrucMind |
+| Color Coding | 3 modes | 4 modes | ✅ StruMind |
 | View Controls | Yes | Yes | ✅ Tie |
-| Glass-morphism UI | No | Yes | ✅ StrucMind |
-| Web Accessibility | No | Yes | ✅ StrucMind |
+| Glass-morphism UI | No | Yes | ✅ StruMind |
+| Web Accessibility | No | Yes | ✅ StruMind |
 
-### **StrucMind vs Tekla:**
-| Feature | Tekla | StrucMind | Winner |
+### **StruMind vs Tekla:**
+| Feature | Tekla | StruMind | Winner |
 |---------|-------|-----------|--------|
 | Professional UI | Yes | Yes | ✅ Tie |
 | Measurement Tools | Yes | Yes | ✅ Tie |
 | Section Cuts | Yes | Yes | ✅ Tie |
-| Cleaner Interface | No | Yes | ✅ StrucMind |
-| PWA Support | No | Yes | ✅ StrucMind |
+| Cleaner Interface | No | Yes | ✅ StruMind |
+| PWA Support | No | Yes | ✅ StruMind |
 
 ---
 
 ## 🚀 UNIQUE ADVANTAGES
 
-**StrucMind's Competitive Edge:**
+**StruMind's Competitive Edge:**
 1. ✅ **Modern Web Architecture** - No installation required
 2. ✅ **Glass-morphism UI** - Beautiful, professional design
 3. ✅ **Better UX** - Intuitive controls and layout
@@ -322,7 +322,7 @@ The implementation includes:
 - Real-time statistics
 - Professional controls
 
-**StrucMind now has a 3D viewport that engineers will love to use!**
+**StruMind now has a 3D viewport that engineers will love to use!**
 
 ---
 

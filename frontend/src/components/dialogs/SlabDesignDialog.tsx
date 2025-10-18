@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { slabDesignApi } from '@/lib/api';
 
 interface SlabDesignDialogProps {
@@ -84,10 +85,134 @@ export function SlabDesignDialog({ open, onClose }: SlabDesignDialogProps) {
             </form>
           </TabsContent>
           <TabsContent value="twoway">
-            <div className="text-sm text-gray-500 p-4">Two-way slab design</div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="lx">Short Span Lx (m)</Label>
+                  <Input id="lx" type="number" step="0.1" {...register('lx', { valueAsNumber: true })} />
+                </div>
+                <div>
+                  <Label htmlFor="ly">Long Span Ly (m)</Label>
+                  <Input id="ly" type="number" step="0.1" {...register('ly', { valueAsNumber: true })} />
+                </div>
+                <div>
+                  <Label htmlFor="thickness_2way">Thickness (mm)</Label>
+                  <Input id="thickness_2way" type="number" defaultValue="150" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dead_load_2way">Dead Load (kN/m²)</Label>
+                  <Input id="dead_load_2way" type="number" step="0.1" {...register('dead_load', { valueAsNumber: true })} />
+                </div>
+                <div>
+                  <Label htmlFor="live_load_2way">Live Load (kN/m²)</Label>
+                  <Input id="live_load_2way" type="number" step="0.1" {...register('live_load', { valueAsNumber: true })} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Edge Condition</Label>
+                  <Select defaultValue="simply">
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="simply">Simply Supported</SelectItem>
+                      <SelectItem value="continuous">Continuous</SelectItem>
+                      <SelectItem value="fixed">Fixed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Ly/Lx Ratio</Label>
+                  <Input type="number" step="0.1" defaultValue="1.25" disabled />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Concrete Grade</Label>
+                  <Select defaultValue="M25">
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="M20">M20</SelectItem>
+                      <SelectItem value="M25">M25</SelectItem>
+                      <SelectItem value="M30">M30</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Steel Grade</Label>
+                  <Select defaultValue="Fe415">
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Fe415">Fe415</SelectItem>
+                      <SelectItem value="Fe500">Fe500</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                <Button type="submit" disabled={loading}>{loading ? 'Designing...' : 'Design Two-Way Slab'}</Button>
+              </DialogFooter>
+            </form>
           </TabsContent>
           <TabsContent value="flat">
-            <div className="text-sm text-gray-500 p-4">Flat slab design with punching shear</div>
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="slab_thickness">Slab Thickness (mm)</Label>
+                  <Input id="slab_thickness" type="number" defaultValue="200" />
+                </div>
+                <div>
+                  <Label htmlFor="column_size">Column Size (mm)</Label>
+                  <Input id="column_size" type="number" defaultValue="400" />
+                </div>
+                <div>
+                  <Label htmlFor="drop_panel">Drop Panel (mm)</Label>
+                  <Input id="drop_panel" type="number" defaultValue="100" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="panel_lx">Panel Lx (m)</Label>
+                  <Input id="panel_lx" type="number" step="0.1" defaultValue="6" />
+                </div>
+                <div>
+                  <Label htmlFor="panel_ly">Panel Ly (m)</Label>
+                  <Input id="panel_ly" type="number" step="0.1" defaultValue="6" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="dead_load_flat">Dead Load (kN/m²)</Label>
+                  <Input id="dead_load_flat" type="number" step="0.1" defaultValue="2" />
+                </div>
+                <div>
+                  <Label htmlFor="live_load_flat">Live Load (kN/m²)</Label>
+                  <Input id="live_load_flat" type="number" step="0.1" defaultValue="4" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="punching_load">Punching Load (kN)</Label>
+                  <Input id="punching_load" type="number" defaultValue="1000" />
+                </div>
+                <div>
+                  <Label>Check Punching Shear</Label>
+                  <Select defaultValue="yes">
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                <Button type="submit" disabled={loading}>{loading ? 'Designing...' : 'Design Flat Slab'}</Button>
+              </DialogFooter>
+            </form>
           </TabsContent>
         </Tabs>
       </DialogContent>

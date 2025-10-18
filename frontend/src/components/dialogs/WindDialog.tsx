@@ -25,6 +25,19 @@ export function WindDialog({ open, onClose }: WindDialogProps) {
       structure_class: 'B',
       height: 10,
       zone: 'interior',
+      building_width: 20,
+      building_depth: 15,
+      wind_direction: 0,
+      method: 'static',
+      drag_coefficient: 1.2,
+      exposure_factor: 1.0,
+      natural_frequency: 0.5,
+      damping_ratio: 0.01,
+      mode_shape: 'first',
+      mass_per_height: 1000,
+      response_type: 'along',
+      gust_factor: 2.0,
+      turbulence_intensity: 0.15,
     },
   });
 
@@ -150,15 +163,227 @@ export function WindDialog({ open, onClose }: WindDialogProps) {
           </TabsContent>
 
           <TabsContent value="forces">
-            <div className="text-sm text-gray-500 p-4">
-              Wind forces calculation - Configure design pressure first
-            </div>
+            <form onSubmit={handleSubmit(async (data) => {
+              setLoading(true);
+              try {
+                await windApi.calculateWindForces({
+                  ...data,
+                  building_width: data.building_width || 20,
+                  building_depth: data.building_depth || 15,
+                  building_height: data.height,
+                });
+                onClose();
+              } catch (error) {
+                console.error('Wind forces calculation failed:', error);
+              } finally {
+                setLoading(false);
+              }
+            })} className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="building_width">Building Width (m)</Label>
+                  <Input
+                    id="building_width"
+                    type="number"
+                    step="0.1"
+                    defaultValue="20"
+                    {...register('building_width', { valueAsNumber: true })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="building_depth">Building Depth (m)</Label>
+                  <Input
+                    id="building_depth"
+                    type="number"
+                    step="0.1"
+                    defaultValue="15"
+                    {...register('building_depth', { valueAsNumber: true })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="building_height_forces">Building Height (m)</Label>
+                  <Input
+                    id="building_height_forces"
+                    type="number"
+                    step="0.1"
+                    {...register('height', { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Wind Direction</Label>
+                  <Select defaultValue="0" onValueChange={(v) => setValue('wind_direction', parseInt(v))}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0° (Along X)</SelectItem>
+                      <SelectItem value="90">90° (Along Y)</SelectItem>
+                      <SelectItem value="45">45° (Diagonal)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Force Coefficient Method</Label>
+                  <Select defaultValue="static" onValueChange={(v) => setValue('method', v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="static">Static Method</SelectItem>
+                      <SelectItem value="dynamic">Dynamic Method</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="drag_coefficient">Drag Coefficient (Cd)</Label>
+                  <Input
+                    id="drag_coefficient"
+                    type="number"
+                    step="0.1"
+                    defaultValue="1.2"
+                    {...register('drag_coefficient', { valueAsNumber: true })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="exposure_factor">Exposure Factor (k2)</Label>
+                  <Input
+                    id="exposure_factor"
+                    type="number"
+                    step="0.01"
+                    defaultValue="1.0"
+                    {...register('exposure_factor', { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Calculating...' : 'Calculate Wind Forces'}
+                </Button>
+              </DialogFooter>
+            </form>
           </TabsContent>
 
           <TabsContent value="dynamic">
-            <div className="text-sm text-gray-500 p-4">
-              Dynamic wind response - Along-wind and across-wind analysis
-            </div>
+            <form onSubmit={handleSubmit(async (data) => {
+              setLoading(true);
+              try {
+                await windApi.calculateDynamicResponse({
+                  ...data,
+                  natural_frequency: data.natural_frequency || 0.5,
+                  damping_ratio: data.damping_ratio || 0.01,
+                  mode_shape: data.mode_shape || 'first',
+                });
+                onClose();
+              } catch (error) {
+                console.error('Dynamic response calculation failed:', error);
+              } finally {
+                setLoading(false);
+              }
+            })} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="natural_frequency">Natural Frequency (Hz)</Label>
+                  <Input
+                    id="natural_frequency"
+                    type="number"
+                    step="0.01"
+                    defaultValue="0.5"
+                    {...register('natural_frequency', { valueAsNumber: true })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="damping_ratio_wind">Damping Ratio</Label>
+                  <Input
+                    id="damping_ratio_wind"
+                    type="number"
+                    step="0.001"
+                    defaultValue="0.01"
+                    {...register('damping_ratio', { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="mass_per_height">Mass per Height (kg/m)</Label>
+                  <Input
+                    id="mass_per_height"
+                    type="number"
+                    defaultValue="10000"
+                    {...register('mass_per_height', { valueAsNumber: true })}
+                  />
+                </div>
+                <div>
+                  <Label>Response Type</Label>
+                  <Select defaultValue="along" onValueChange={(v) => setValue('response_type', v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="along">Along-Wind</SelectItem>
+                      <SelectItem value="across">Across-Wind</SelectItem>
+                      <SelectItem value="torsional">Torsional</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Mode Shape</Label>
+                  <Select defaultValue="first" onValueChange={(v) => setValue('mode_shape', v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="first">First Mode</SelectItem>
+                      <SelectItem value="second">Second Mode</SelectItem>
+                      <SelectItem value="third">Third Mode</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="gust_factor">Gust Factor</Label>
+                  <Input
+                    id="gust_factor"
+                    type="number"
+                    step="0.1"
+                    defaultValue="2.0"
+                    {...register('gust_factor', { valueAsNumber: true })}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="turbulence_intensity">Turbulence Intensity (%)</Label>
+                <Input
+                  id="turbulence_intensity"
+                  type="number"
+                  step="1"
+                  defaultValue="15"
+                  {...register('turbulence_intensity', { valueAsNumber: true })}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading ? 'Calculating...' : 'Calculate Dynamic Response'}
+                </Button>
+              </DialogFooter>
+            </form>
           </TabsContent>
         </Tabs>
       </DialogContent>

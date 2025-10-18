@@ -4,7 +4,7 @@ Simple script to start the backend server
 import uvicorn
 
 if __name__ == "__main__":
-    print("🚀 Starting StrucMind Backend Server...")
+    print("🚀 Starting StruMind Backend Server...")
     print("📍 Server will be available at: http://localhost:8000")
     print("📚 API Documentation: http://localhost:8000/docs")
     print("🔧 Health Check: http://localhost:8000/health")

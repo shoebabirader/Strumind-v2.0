@@ -7,7 +7,7 @@
 
 ## 🎯 Objective
 
-Build a **clean, modern, professional** frontend for StrucMind from scratch that:
+Build a **clean, modern, professional** frontend for StruMind from scratch that:
 - ✅ Connects seamlessly to the existing backend API
 - ✅ Provides excellent UX for structural engineers
 - ✅ Uses modern best practices
@@ -276,7 +276,7 @@ const WS_URL = 'ws://localhost:8000/ws'
 
 ```json
 {
-  "name": "strucmind-frontend",
+  "name": "strumind-frontend",
   "version": "2.0.0",
   "private": true,
   "scripts": {

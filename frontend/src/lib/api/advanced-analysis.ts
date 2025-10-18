@@ -62,4 +62,14 @@ export const advancedAnalysisApi = {
     const response = await apiClient.get<ApiResponse<string[]>>('/advanced-analysis/steel-sections/standards');
     return response.data.data!;
   },
+
+  geometricNonlinear: async (data: any): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>('/advanced-analysis/geometric-nonlinear', data);
+    return response.data.data!;
+  },
+
+  materialNonlinear: async (data: any): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>('/advanced-analysis/material-nonlinear', data);
+    return response.data.data!;
+  },
 };

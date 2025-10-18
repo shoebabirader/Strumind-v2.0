@@ -35,8 +35,8 @@ export function MLDialog({ open, onClose }: MLDialogProps) {
           <DialogTitle>Machine Learning</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
-          <div><Label>ML Model</Label><Select value={model} onValueChange={setModel}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="section_prediction">Section Prediction</SelectItem><SelectItem value="reinforcement">Reinforcement Prediction</SelectItem><SelectItem value="optimization">Design Optimization</SelectItem></SelectContent></Select></div>
-          <p className="text-sm text-gray-500">AI-powered design recommendations</p>
+          <div><Label>ML Model</Label><Select value={model} onValueChange={setModel}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="section_prediction">Section Prediction</SelectItem><SelectItem value="reinforcement">Reinforcement Prediction</SelectItem><SelectItem value="optimization">Design Optimization</SelectItem><SelectItem value="load_prediction">Load Prediction</SelectItem><SelectItem value="failure_prediction">Failure Prediction</SelectItem></SelectContent></Select></div>
+          <div className="p-4 bg-purple-50 rounded-lg"><p className="text-sm font-medium mb-2">AI-Powered Features:</p><ul className="text-sm space-y-1 text-gray-700"><li>• Automatic section sizing</li><li>• Reinforcement optimization</li><li>• Load pattern recognition</li><li>• Failure mode prediction</li></ul></div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>

@@ -51,4 +51,9 @@ export const windApi = {
     const response = await apiClient.get<ApiResponse>('/api/wind/wind-zones/india');
     return response.data.data!;
   },
+
+  calculateDynamicResponse: async (data: any): Promise<any> => {
+    const response = await apiClient.post<ApiResponse>('/api/wind/dynamic-response', data);
+    return response.data.data!;
+  },
 };

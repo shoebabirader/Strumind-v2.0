@@ -9,7 +9,7 @@
 
 ```
 Development: http://localhost:8000/api
-Production: https://api.strucmind.com/api
+Production: https://api.strumind.com/api
 ```
 
 ---

@@ -361,7 +361,7 @@ export function NewDialog() {
 
 ## ✅ CONCLUSION
 
-**StrucMind now has 100% API-to-frontend coverage!**
+**StruMind now has 100% API-to-frontend coverage!**
 
 All 150+ backend API endpoints are accessible through:
 - 45 API client files

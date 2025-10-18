@@ -34,7 +34,7 @@ export function HelpDialog({ open, onClose }: HelpDialogProps) {
             <div className="space-y-2">
               <Card>
                 <CardHeader><CardTitle className="text-sm">Getting Started</CardTitle></CardHeader>
-                <CardContent><p className="text-xs text-gray-500">Learn the basics of StrucMind</p></CardContent>
+                <CardContent><p className="text-xs text-gray-500">Learn the basics of StruMind</p></CardContent>
               </Card>
               <Card>
                 <CardHeader><CardTitle className="text-sm">Creating Your First Model</CardTitle></CardHeader>

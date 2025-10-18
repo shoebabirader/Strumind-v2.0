@@ -14,12 +14,12 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>About StrucMind</DialogTitle>
+          <DialogTitle>About StruMind</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <div className="text-center py-4">
             <div className="text-4xl mb-2">🏗️</div>
-            <h2 className="text-2xl font-bold">StrucMind</h2>
+            <h2 className="text-2xl font-bold">StruMind</h2>
             <p className="text-sm text-gray-500">Professional Structural Analysis Software</p>
           </div>
           <Card>
@@ -43,7 +43,7 @@ export function AboutDialog({ open, onClose }: AboutDialogProps) {
             <Button size="sm" variant="outline" className="flex-1">Check for Updates</Button>
           </div>
           <p className="text-xs text-center text-gray-500">
-            © 2025 StrucMind. All rights reserved.
+            © 2025 StruMind. All rights reserved.
           </p>
         </div>
       </DialogContent>

@@ -12,7 +12,7 @@ export function Header() {
   return (
     <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4">
       <div className="flex items-center space-x-4">
-        <h1 className="text-xl font-bold text-gray-900">StrucMind</h1>
+        <h1 className="text-xl font-bold text-gray-900">StruMind</h1>
         {currentProject && (
           <div className="flex items-center space-x-2">
             <span className="text-gray-400">|</span>

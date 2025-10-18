@@ -45,7 +45,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Create Account</h1>
-          <p className="text-gray-600 mt-2">Join StrucMind Platform</p>
+          <p className="text-gray-600 mt-2">Join StruMind Platform</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">

@@ -32,7 +32,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">StrucMind</h1>
+          <h1 className="text-3xl font-bold text-gray-900">StruMind</h1>
           <p className="text-gray-600 mt-2">AI-Powered Structural Engineering</p>
         </div>
 

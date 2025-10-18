@@ -58,9 +58,10 @@ export function BIMDialog({ open, onClose }: BIMDialogProps) {
         </DialogHeader>
 
         <Tabs defaultValue="export">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="export">Export IFC</TabsTrigger>
             <TabsTrigger value="import">Import IFC</TabsTrigger>
+            <TabsTrigger value="visualization">Visualization</TabsTrigger>
           </TabsList>
 
           <TabsContent value="export" className="space-y-4">
@@ -124,6 +125,54 @@ export function BIMDialog({ open, onClose }: BIMDialogProps) {
               <p className="font-medium mb-1">⚠️ Import Notes:</p>
               <p>IFC import will create nodes, elements, and materials from the file.</p>
             </div>
+          </TabsContent>
+
+          <TabsContent value="visualization" className="space-y-4">
+            <div className="p-4 bg-purple-50 rounded-lg">
+              <h3 className="font-semibold mb-2">3D BIM Visualization</h3>
+              <p className="text-sm text-gray-700">
+                View and interact with BIM model in 3D viewport with analysis results overlay
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-white border rounded">
+                <div>
+                  <div className="font-medium">Show Structural Elements</div>
+                  <div className="text-sm text-gray-500">Display beams, columns, slabs</div>
+                </div>
+                <Checkbox defaultChecked />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-white border rounded">
+                <div>
+                  <div className="font-medium">Show Analysis Results</div>
+                  <div className="text-sm text-gray-500">Overlay stress, displacement contours</div>
+                </div>
+                <Checkbox />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-white border rounded">
+                <div>
+                  <div className="font-medium">Show Loads</div>
+                  <div className="text-sm text-gray-500">Display applied loads and reactions</div>
+                </div>
+                <Checkbox />
+              </div>
+
+              <div className="flex items-center justify-between p-3 bg-white border rounded">
+                <div>
+                  <div className="font-medium">Show Deformed Shape</div>
+                  <div className="text-sm text-gray-500">Animated deformation visualization</div>
+                </div>
+                <Checkbox />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={onClose}>Close</Button>
+              <Button onClick={() => {/* Open 3D viewer */}}>Open 3D Viewer</Button>
+            </DialogFooter>
           </TabsContent>
         </Tabs>
       </DialogContent>

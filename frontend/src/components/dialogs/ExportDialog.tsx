@@ -29,9 +29,11 @@ export function ExportDialog({ open, onClose }: ExportDialogProps) {
         </DialogHeader>
         <div className="space-y-4">
           <div><Label>Export Format</Label><Select value={format} onValueChange={setFormat}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="json">JSON</SelectItem><SelectItem value="csv">CSV</SelectItem><SelectItem value="excel">Excel</SelectItem><SelectItem value="dxf">DXF (CAD)</SelectItem><SelectItem value="ifc">IFC (BIM)</SelectItem><SelectItem value="pdf">PDF Report</SelectItem></SelectContent></Select></div>
-          <div className="flex items-center space-x-2">
-            <Checkbox id="results" checked={includeResults} onCheckedChange={(checked) => setIncludeResults(checked as boolean)} />
-            <label htmlFor="results" className="text-sm">Include analysis results</label>
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2"><Checkbox id="results" checked={includeResults} onCheckedChange={(checked) => setIncludeResults(checked as boolean)} /><label htmlFor="results" className="text-sm">Include analysis results</label></div>
+            <div className="flex items-center space-x-2"><Checkbox id="geometry" defaultChecked /><label htmlFor="geometry" className="text-sm">Include geometry</label></div>
+            <div className="flex items-center space-x-2"><Checkbox id="materials" defaultChecked /><label htmlFor="materials" className="text-sm">Include materials</label></div>
+            <div className="flex items-center space-x-2"><Checkbox id="loads" defaultChecked /><label htmlFor="loads" className="text-sm">Include loads</label></div>
           </div>
         </div>
         <DialogFooter>

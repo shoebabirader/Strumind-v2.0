@@ -362,8 +362,8 @@ export class ErrorBoundary extends React.Component<
 ```json
 // public/manifest.json
 {
-  "name": "StrucMind",
-  "short_name": "StrucMind",
+  "name": "StruMind",
+  "short_name": "StruMind",
   "description": "Professional Structural Analysis Platform",
   "start_url": "/",
   "display": "standalone",

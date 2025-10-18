@@ -1,4 +1,4 @@
-# 🚀 How to Start StrucMind Servers
+# 🚀 How to Start StruMind Servers
 
 ## ⚠️ IMPORTANT: You Need BOTH Servers Running!
 
@@ -19,7 +19,7 @@ python start.py
 
 **Expected Output:**
 ```
-🚀 Starting StrucMind Backend Server...
+🚀 Starting StruMind Backend Server...
 📍 Server will be available at: http://localhost:8000
 📚 API Documentation: http://localhost:8000/docs
 🔧 Health Check: http://localhost:8000/health

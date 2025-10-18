@@ -309,7 +309,7 @@ Engineers can now:
 
 ## 🎉 CONCLUSION
 
-**StrucMind is now a COMPLETE structural engineering platform!**
+**StruMind is now a COMPLETE structural engineering platform!**
 
 Every backend API now has a beautiful, functional frontend dialog. Engineers can access all features through an intuitive UI without writing code or using APIs directly.
 

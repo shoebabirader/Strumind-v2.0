@@ -56,4 +56,14 @@ export const dynamicAnalysisApi = {
     const response = await apiClient.get<ApiResponse<string[]>>('/dynamic/integration-methods');
     return response.data.data!;
   },
+
+  runTimeHistory: async (data: any): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>('/dynamic/time-history', data);
+    return response.data.data!;
+  },
+
+  runResponseSpectrum: async (data: any): Promise<any> => {
+    const response = await apiClient.post<ApiResponse<any>>('/dynamic/response-spectrum', data);
+    return response.data.data!;
+  },
 };
