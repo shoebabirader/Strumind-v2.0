@@ -69,6 +69,10 @@ class DampingModel:
         
         Returns:
             Damping matrix C
+        
+        Note:
+            Correct modal damping transformation: C = M @ Φ @ C_modal @ Φ^T
+            where Φ are the mass-normalized mode shapes
         """
         n_modes = len(damping_ratios)
         phi = mode_shapes[:, :n_modes]
@@ -76,8 +80,9 @@ class DampingModel:
         # Modal damping matrix
         C_modal = np.diag(2 * np.array(damping_ratios))
         
-        # Transform to physical coordinates
-        C = phi @ C_modal @ phi.T @ M
+        # Transform to physical coordinates (correct formulation)
+        # C = M @ Φ @ C_modal @ Φ^T
+        C = M @ phi @ C_modal @ phi.T
         return C
 
 

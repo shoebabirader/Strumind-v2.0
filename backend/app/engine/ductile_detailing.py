@@ -140,6 +140,11 @@ class DuctileDetailing:
         bb = joint_data.get("beam_width", 300)  # mm
         Db = joint_data.get("beam_depth", 500)  # mm
         fck = joint_data.get("concrete_grade", 25)  # MPa
+        fy = joint_data.get("steel_grade", 415)  # MPa
+        
+        # Calculate confinement spacing based on column dimensions
+        # Per IS 13920 Clause 7.4.8
+        s_confine = min(bc / 2, Dc / 2, 100)  # mm
         
         # Joint shear stress
         if self.design_code == "IS 13920":
@@ -148,7 +153,7 @@ class DuctileDetailing:
             tau_max = 1.7 * np.sqrt(fck)  # MPa
         
         # Joint reinforcement
-        # Horizontal ties in joint
+        # Horizontal ties in joint (IS 13920 Clause 7.4.8)
         Ash = 0.3 * (bc * Dc / bb - 1) * (fck / fy) * bb * s_confine
         
         # Vertical stirrups
@@ -158,6 +163,7 @@ class DuctileDetailing:
             "max_shear_stress": tau_max,
             "horizontal_ties_area": Ash,
             "tie_spacing": tie_spacing,
+            "confinement_spacing": s_confine,
             "requirements": self._get_joint_requirements()
         }
     

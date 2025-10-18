@@ -494,6 +494,14 @@ class IS456ConcreteDesign:
         Returns:
             Dict with stirrup details
         """
+        # Validate Asv_s to prevent division by zero
+        if Asv_s <= 0:
+            return {
+                'error': 'invalid_input',
+                'message': 'Required stirrup area per unit length (Asv_s) must be greater than zero',
+                'Asv_s': Asv_s
+            }
+        
         stirrup_sizes = [6, 8, 10, 12]  # mm
         arrangements = []
         
@@ -502,7 +510,7 @@ class IS456ConcreteDesign:
             # 2-legged stirrup
             Asv = 2 * bar_area
             
-            # Calculate spacing
+            # Calculate spacing (safe now - Asv_s validated above)
             s = Asv / Asv_s  # mm
             
             # Check maximum spacing (Clause 26.5.1.5)

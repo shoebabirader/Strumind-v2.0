@@ -15,46 +15,91 @@ class ShellElement:
         self.nu = material.get('nu', 0.2)  # Poisson's ratio
         
     def stiffness_matrix(self) -> np.ndarray:
-        """Calculate 24x24 stiffness matrix (6 DOF per node)"""
-        # Simplified - full implementation uses numerical integration
+        """
+        Calculate 24x24 stiffness matrix (6 DOF per node)
+        
+        TODO: PLACEHOLDER IMPLEMENTATION - Returns zero matrix
+        This method needs completion with:
+        1. Shape function derivatives for 4-node quadrilateral
+        2. B-matrix assembly for membrane and bending
+        3. Numerical integration using Gauss quadrature (2x2)
+        4. Proper stiffness assembly: K = ∫ B^T D B dA
+        
+        Current status: NON-FUNCTIONAL - Do not use for analysis
+        """
         t = self.thickness / 1000  # Convert to m
         E = self.E * 1e6  # Convert to Pa
         nu = self.nu
         
-        # Membrane stiffness
+        # Membrane stiffness matrix (plane stress)
         D_membrane = (E * t) / (1 - nu**2) * np.array([
             [1, nu, 0],
             [nu, 1, 0],
             [0, 0, (1-nu)/2]
         ])
         
-        # Bending stiffness
+        # Bending stiffness matrix (plate bending)
         D_bending = (E * t**3) / (12 * (1 - nu**2)) * np.array([
             [1, nu, 0],
             [nu, 1, 0],
             [0, 0, (1-nu)/2]
         ])
         
-        # Full stiffness matrix (simplified)
+        # TODO: Implement actual stiffness assembly
+        # Full stiffness matrix (currently returns zeros - PLACEHOLDER)
         K = np.zeros((24, 24))
         
-        # Assemble membrane and bending contributions
-        # (Full implementation would use shape functions and Gauss integration)
+        # TODO: Assemble membrane and bending contributions using:
+        # - Shape functions N_i for 4-node quad
+        # - B-matrix (strain-displacement)
+        # - Gauss integration (2x2 points)
         
         return K
     
     def stress_calculation(self, displacements: np.ndarray) -> Dict:
-        """Calculate stresses in shell element"""
-        # Membrane stresses
-        sigma_x = 0.0  # Calculated from displacements
+        """
+        Calculate stresses in shell element from displacement vector
+        
+        TODO: PLACEHOLDER IMPLEMENTATION - Returns zero stresses
+        This method needs completion with:
+        1. Extract element displacements from global displacement vector
+        2. Calculate strains using B-matrix: ε = B * u_element
+        3. Calculate stresses using material matrix: σ = D * ε
+        4. Separate membrane and bending components
+        5. Calculate Von Mises stress from stress tensor
+        
+        Current status: NON-FUNCTIONAL - Always returns zero
+        
+        Args:
+            displacements: Global displacement vector
+            
+        Returns:
+            Dict with stress components (currently all zeros)
+        """
+        # TODO: Implement actual stress calculation
+        # Extract element displacements (24 DOF for 4-node shell)
+        # u_element = displacements[element_dof_indices]
+        
+        # TODO: Calculate strains at element center or Gauss points
+        # For membrane: ε = [εx, εy, γxy]^T = B_membrane * u_element
+        # For bending: κ = [κx, κy, κxy]^T = B_bending * u_element
+        
+        # Material properties
+        E = self.E * 1e6  # Pa
+        nu = self.nu
+        t = self.thickness / 1000  # m
+        
+        # Membrane stresses (currently placeholder zeros)
+        sigma_x = 0.0  # TODO: Calculate from D_membrane * ε_membrane
         sigma_y = 0.0
         tau_xy = 0.0
         
-        # Bending stresses
-        sigma_x_bend = 0.0
+        # Bending stresses at top/bottom surfaces (currently placeholder zeros)
+        sigma_x_bend = 0.0  # TODO: Calculate from D_bending * κ * (z/t)
         sigma_y_bend = 0.0
         
-        # Von Mises stress
+        # Von Mises stress (plane stress formulation)
+        # σ_vm = √(σx² + σy² - σx*σy + 3*τxy²)
         sigma_vm = np.sqrt(sigma_x**2 + sigma_y**2 - sigma_x*sigma_y + 3*tau_xy**2)
         
         return {
@@ -63,7 +108,8 @@ class ShellElement:
             "shear_stress_xy": tau_xy,
             "bending_stress_x": sigma_x_bend,
             "bending_stress_y": sigma_y_bend,
-            "von_mises_stress": sigma_vm
+            "von_mises_stress": sigma_vm,
+            "warning": "Placeholder implementation - returns zero stresses"
         }
 
 class SolidElement:
@@ -75,11 +121,24 @@ class SolidElement:
         self.nu = material.get('nu', 0.2)
         
     def stiffness_matrix(self) -> np.ndarray:
-        """Calculate 24x24 stiffness matrix (3 DOF per node)"""
+        """
+        Calculate 24x24 stiffness matrix (3 DOF per node)
+        
+        TODO: PLACEHOLDER IMPLEMENTATION - Returns zero matrix
+        This method needs completion with:
+        1. Shape function derivatives for 8-node hexahedral element
+        2. B-matrix assembly (6x24 strain-displacement matrix)
+        3. Numerical integration using 2x2x2 Gauss quadrature
+        4. Proper stiffness assembly: K = ∫ B^T D B dV
+        
+        Current status: NON-FUNCTIONAL - Do not use for analysis
+        Note: See backend/app/engine/advanced_elements.py SolidElement for 
+        a complete implementation with proper shape functions and B-matrix.
+        """
         E = self.E * 1e6
         nu = self.nu
         
-        # Elasticity matrix
+        # 3D Elasticity matrix (6x6) for isotropic material
         lambda_lame = (E * nu) / ((1 + nu) * (1 - 2*nu))
         mu = E / (2 * (1 + nu))
         
@@ -92,10 +151,15 @@ class SolidElement:
             [0, 0, 0, 0, 0, mu]
         ])
         
-        # Full stiffness matrix (simplified)
+        # TODO: Implement actual stiffness assembly
+        # Full stiffness matrix (currently returns zeros - PLACEHOLDER)
         K = np.zeros((24, 24))
         
-        # Would use Gauss integration in full implementation
+        # TODO: Use Gauss integration (2x2x2 points) with:
+        # - Shape function derivatives dN/dxi, dN/deta, dN/dzeta
+        # - Jacobian matrix and its inverse
+        # - B-matrix for each integration point
+        # - K += B^T @ D @ B * det(J) * weight
         
         return K
 
